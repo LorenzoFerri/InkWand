@@ -1,0 +1,82 @@
+#if canImport(SwiftUI) && canImport(UIKit)
+import SwiftUI
+
+struct ContentView: View {
+    @StateObject private var connection = TabletConnection()
+    @State private var showsControls = true
+    @State private var controlsPosition: ControlsPosition = .top
+    @State private var controlOrder = ControlDeckItem.loadOrder()
+
+    private let minimumControlsHeight: CGFloat = 82
+    private let drawingOuterPadding: CGFloat = 16
+    private let drawingAspectRatio: CGFloat = 16.0 / 9.0
+
+    var body: some View {
+        GeometryReader { proxy in
+            let drawingHeight = drawingSurfaceHeight(in: proxy.size)
+            let controlsHeight = max(proxy.size.height - drawingHeight, minimumControlsHeight)
+
+            VStack(spacing: 0) {
+                if controlsPosition == .top {
+                    controlsContent
+                        .frame(height: controlsHeight)
+                    drawingSurface
+                        .frame(height: drawingHeight)
+                } else {
+                    drawingSurface
+                        .frame(height: drawingHeight)
+                    controlsContent
+                        .frame(height: controlsHeight)
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
+        .ignoresSafeArea(.container, edges: .bottom)
+        .persistentSystemOverlays(.hidden)
+    }
+
+    private var controlsContent: some View {
+        Group {
+            if showsControls {
+                ControlDeckView(
+                    connection: connection,
+                    showsControls: $showsControls,
+                    controlsPosition: $controlsPosition,
+                    controlOrder: $controlOrder
+                )
+                .padding(.horizontal, 16)
+            } else {
+                ControlOptionsPopoverButton(
+                    mode: $connection.mode,
+                    showsControls: $showsControls,
+                    controlsPosition: $controlsPosition,
+                    controlOrder: $controlOrder
+                ) {
+                    HiddenControlsButton()
+                }
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    private var drawingSurface: some View {
+        PencilCaptureRepresentable(
+            connection: connection,
+            controlsPosition: controlsPosition,
+            reservesControlDeckSpace: false
+        )
+        // .background(Color.black)
+        .background(GlassKeyShape())
+        .frame(maxWidth: .infinity)
+    }
+
+    private func drawingSurfaceHeight(in size: CGSize) -> CGFloat {
+        let activeWidth = max(size.width - drawingOuterPadding * 2, 0)
+        let idealHeight = activeWidth / drawingAspectRatio + drawingOuterPadding * 2
+        let maximumHeight = max(size.height - minimumControlsHeight, 0)
+        return min(idealHeight, maximumHeight)
+    }
+}
+#endif
