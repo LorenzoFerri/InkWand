@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import UIKit
 import InkWandCore
 
@@ -445,4 +444,3 @@ private struct LastPencilContact {
         azimuth = sample.azimuth
     }
 }
-#endif

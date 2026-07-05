@@ -1,4 +1,3 @@
-#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 
 enum RelativeInputEvent {
@@ -37,7 +36,7 @@ struct HorizontalRelativeInputControl: View {
                         .frame(width: labelWidth, alignment: .leading)
 
                     Capsule()
-                        .fill(.white.opacity(0.10))
+                        .fill(.white.opacity(0.08))
                         .frame(width: 1, height: max(size.height - 14, 8))
 
                     ZStack {
@@ -50,6 +49,8 @@ struct HorizontalRelativeInputControl: View {
                 }
             }
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .scaleEffect(isDragging ? 1.018 : 1)
+            .animation(.bouncy(duration: 0.22, extraBounce: 0.28), value: isDragging)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -76,22 +77,12 @@ struct HorizontalRelativeInputControl: View {
 
     private func wheelBase(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .relativeInputGlass(tint: isDragging ? .white.opacity(0.07) : .black.opacity(0.10), cornerRadius: cornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(isDragging ? 0.24 : 0.13), lineWidth: 0.8)
+            .fill(.clear)
+            .glassEffect(
+                isDragging ? .regular.tint(.cyan.opacity(0.12)).interactive() : .regular.interactive(),
+                in: .rect(cornerRadius: cornerRadius)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: max(cornerRadius - 3, 1), style: .continuous)
-                    .strokeBorder(.black.opacity(0.16), lineWidth: 1)
-                    .padding(3)
-            )
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
-                    .blendMode(.screen)
-            }
-            .shadow(color: .black.opacity(0.18), radius: 4, y: 1)
+            .animation(.snappy(duration: 0.12), value: isDragging)
     }
 
     private func tickTexture(size: CGSize, tickSpacing: CGFloat) -> some View {
@@ -104,7 +95,7 @@ struct HorizontalRelativeInputControl: View {
                 let isMajor = index % 3 == 0
 
                 Capsule()
-                    .fill(isMajor ? .white.opacity(0.30) : .white.opacity(0.12))
+                    .fill(isMajor ? .white.opacity(0.24) : .white.opacity(0.10))
                     .frame(width: isMajor ? 1.3 : 0.8, height: isMajor ? size.height * 0.46 : size.height * 0.26)
                     .position(
                         x: baseOffset + CGFloat(index) * tickSpacing,
@@ -116,20 +107,21 @@ struct HorizontalRelativeInputControl: View {
 
     private func centerGuide(size: CGSize) -> some View {
         Capsule()
-            .fill(.cyan.opacity(isDragging ? 0.86 : 0.72))
+            .fill(.cyan.opacity(isDragging ? 0.92 : 0.76))
             .frame(width: 1.6, height: size.height * 0.48)
-            .shadow(color: .cyan.opacity(isDragging ? 0.24 : 0.14), radius: 3)
+            .shadow(color: .cyan.opacity(isDragging ? 0.26 : 0.12), radius: 2)
+            .animation(.snappy(duration: 0.12), value: isDragging)
     }
 
     private var stepIndicators: some View {
         HStack {
             Image(systemName: "chevron.left")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.34))
+                .foregroundStyle(.white.opacity(0.28))
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.34))
+                .foregroundStyle(.white.opacity(0.28))
         }
         .padding(.horizontal, 8)
     }
@@ -171,31 +163,3 @@ struct HorizontalRelativeInputControl: View {
         return remainder >= 0 ? remainder : remainder + period
     }
 }
-
-private extension View {
-    func relativeInputGlass(tint: Color, cornerRadius: CGFloat) -> some View {
-        modifier(RelativeInputGlassSurface(tint: tint, cornerRadius: cornerRadius))
-    }
-}
-
-private struct RelativeInputGlassSurface: ViewModifier {
-    let tint: Color
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .foregroundStyle(.clear)
-                .glassEffect(
-                    .regular.tint(tint),
-                    in: .rect(cornerRadius: cornerRadius)
-                )
-        } else {
-            content
-                .foregroundStyle(.clear)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(tint))
-        }
-    }
-}
-#endif

@@ -1,11 +1,8 @@
-#if canImport(Network) && canImport(UIKit)
 import Foundation
 import Network
 import UIKit
 import InkWandCore
-#if canImport(Darwin)
 import Darwin
-#endif
 
 enum TabletConnectionMode: String, CaseIterable, Identifiable {
     case auto = "Auto"
@@ -13,6 +10,17 @@ enum TabletConnectionMode: String, CaseIterable, Identifiable {
     case wifi = "Wi-Fi"
 
     var id: String { rawValue }
+
+    var symbolName: String {
+        switch self {
+        case .auto:
+            return "wand.and.rays"
+        case .usb:
+            return "cable.connector"
+        case .wifi:
+            return "wifi"
+        }
+    }
 }
 
 enum TabletConnectionState: String {
@@ -263,7 +271,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
     }
 
     private func startUDPDiscovery() {
-        #if canImport(Darwin)
         guard udpDiscoveryFD < 0 else { return }
 
         let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
@@ -313,7 +320,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
         timer.resume()
         udpDiscoveryTimer = timer
-        #endif
     }
 
     private func stopUDPDiscovery() {
@@ -489,7 +495,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
     }
 
-    #if canImport(Darwin)
     private func sendUDPDiscoveryProbe() {
         guard udpDiscoveryFD >= 0, connection == nil, !isWiFiConnecting else { return }
 
@@ -537,7 +542,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         let ipBytes = ipBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
         connectWiFi(host: String(decoding: ipBytes, as: UTF8.self), port: discoveredPort)
     }
-    #endif
 
     private func sendHello() {
         guard connection != nil, canvasSize.width > 0, canvasSize.height > 0 else { return }
@@ -594,4 +598,3 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
     }
 }
-#endif

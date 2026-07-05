@@ -1,11 +1,9 @@
-#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var connection = TabletConnection()
     @State private var showsControls = true
     @State private var controlsPosition: ControlsPosition = .top
-    @State private var controlOrder = ControlDeckItem.loadOrder()
 
     private let minimumControlsHeight: CGFloat = 82
     private let drawingOuterPadding: CGFloat = 16
@@ -20,13 +18,17 @@ struct ContentView: View {
                 if controlsPosition == .top {
                     controlsContent
                         .frame(height: controlsHeight)
+                        .zIndex(1)
                     drawingSurface
                         .frame(height: drawingHeight)
+                        .zIndex(0)
                 } else {
                     drawingSurface
                         .frame(height: drawingHeight)
+                        .zIndex(0)
                     controlsContent
                         .frame(height: controlsHeight)
+                        .zIndex(1)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -38,27 +40,12 @@ struct ContentView: View {
     }
 
     private var controlsContent: some View {
-        Group {
-            if showsControls {
-                ControlDeckView(
-                    connection: connection,
-                    showsControls: $showsControls,
-                    controlsPosition: $controlsPosition,
-                    controlOrder: $controlOrder
-                )
-                .padding(.horizontal, 16)
-            } else {
-                ControlOptionsPopoverButton(
-                    mode: $connection.mode,
-                    showsControls: $showsControls,
-                    controlsPosition: $controlsPosition,
-                    controlOrder: $controlOrder
-                ) {
-                    HiddenControlsButton()
-                }
-                .padding(.vertical, 8)
-            }
-        }
+        ControlDeckView(
+            connection: connection,
+            showsControls: $showsControls,
+            controlsPosition: $controlsPosition
+        )
+        .padding(.horizontal, 16)
     }
 
     private var drawingSurface: some View {
@@ -67,8 +54,7 @@ struct ContentView: View {
             controlsPosition: controlsPosition,
             reservesControlDeckSpace: false
         )
-        // .background(Color.black)
-        .background(GlassKeyShape())
+        .background(Color.black)
         .frame(maxWidth: .infinity)
     }
 
@@ -79,4 +65,3 @@ struct ContentView: View {
         return min(idealHeight, maximumHeight)
     }
 }
-#endif

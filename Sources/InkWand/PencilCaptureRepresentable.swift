@@ -1,4 +1,3 @@
-#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 
 struct PencilCaptureRepresentable: UIViewRepresentable {
@@ -20,4 +19,3 @@ struct PencilCaptureRepresentable: UIViewRepresentable {
         uiView.reservesControlDeckSpace = reservesControlDeckSpace
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 import InkWandCore
 
@@ -6,7 +5,11 @@ struct ControlDeckView: View {
     @ObservedObject var connection: TabletConnection
     @Binding var showsControls: Bool
     @Binding var controlsPosition: ControlsPosition
-    @Binding var controlOrder: [ControlDeckItem]
+    @State private var showsOptions = false
+    @State private var revealsControls = true
+    @State private var controlsRevealTask: Task<Void, Never>?
+
+    private let controlItems = ControlDeckItem.allCases
 
     var body: some View {
         GeometryReader { proxy in
@@ -14,101 +17,94 @@ struct ControlDeckView: View {
             let itemHeight = max(proxy.size.height - deckInset * 2, 64)
             let encoderRowHeight = max((itemHeight - 8) / 2, 26)
             let encoderWidth = max(encoderRowHeight * 8.2, 230)
-            let contentWidth = proxy.size.width - deckInset * 2
+            let collapsedWidth: CGFloat = 84
+            let contentWidth = max(proxy.size.width - deckInset * 2, 0)
+            let deckWidth = showsControls ? proxy.size.width : collapsedWidth + deckInset * 2
 
-            controlDeckItems(encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight, contentWidth: contentWidth)
-                .frame(width: contentWidth, height: itemHeight)
-                .padding(deckInset)
+            controlDeckItems(
+                encoderWidth: encoderWidth,
+                encoderRowHeight: encoderRowHeight
+            )
+            .frame(
+                width: showsControls ? contentWidth : collapsedWidth,
+                height: itemHeight,
+                alignment: .trailing
+            )
+            .padding(deckInset)
+            .frame(width: deckWidth, alignment: .trailing)
+            .glassEffect(.regular, in: .rect(cornerRadius: ControlDeckMetrics.outerRadius))
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .animation(.snappy(duration: 0.22), value: showsControls)
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: 82, maxHeight: .infinity)
-        .background(ControlDeckBackground())
+        .onAppear {
+            revealsControls = showsControls
+        }
+        .onChange(of: showsControls) { _, isShowing in
+            controlsRevealTask?.cancel()
+            if isShowing {
+                revealsControls = false
+                controlsRevealTask = Task {
+                    try? await Task.sleep(for: .milliseconds(140))
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        withAnimation(.snappy(duration: 0.12)) {
+                            revealsControls = true
+                        }
+                    }
+                }
+            } else {
+                withAnimation(.snappy(duration: 0.10)) {
+                    revealsControls = false
+                }
+            }
+        }
     }
 
-    private func controlDeckItems(encoderWidth: CGFloat, encoderRowHeight: CGFloat, contentWidth: CGFloat) -> some View {
-        let unitWidth = flexibleUnitWidth(encoderWidth: encoderWidth, contentWidth: contentWidth)
+    private func controlDeckItems(
+        encoderWidth: CGFloat,
+        encoderRowHeight: CGFloat
+    ) -> some View {
+        HStack(spacing: 10) {
+            if revealsControls {
+                Group {
+                    ForEach(Array(controlItems.enumerated()), id: \.element.id) { index, item in
+                        if index > 0 {
+                            DeckDivider()
+                        }
+                        controlItem(item, encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight)
+                    }
 
-        return HStack(spacing: 10) {
-            ForEach(Array(controlOrder.enumerated()), id: \.element.id) { index, item in
-                if index > 0 {
                     DeckDivider()
                 }
-                controlItem(item, encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight)
-                    .frame(width: groupWidth(for: item, unitWidth: unitWidth, encoderWidth: encoderWidth))
+                .transition(.opacity)
             }
-
-            DeckDivider()
             statusMenu
         }
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     @ViewBuilder
-    private func controlItem(_ item: ControlDeckItem, encoderWidth: CGFloat, encoderRowHeight: CGFloat) -> some View {
+    private func controlItem(
+        _ item: ControlDeckItem,
+        encoderWidth: CGFloat,
+        encoderRowHeight: CGFloat
+    ) -> some View {
         switch item {
         case .history:
             historyControls
+                .frame(minWidth: 98, maxWidth: .infinity)
         case .brush:
             brushSettingControls(encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight)
+                .frame(width: encoderWidth)
+                .layoutPriority(1)
         case .tools:
             toolControls
+                .frame(minWidth: 98, maxWidth: .infinity)
         case .pressure:
             pressureReadout
-        }
-    }
-
-    private func flexibleUnitWidth(encoderWidth: CGFloat, contentWidth: CGFloat) -> CGFloat {
-        let spacing: CGFloat = 10
-        let dividerWidth: CGFloat = 1
-        let readoutWidth: CGFloat = 96
-        let optionsWidth: CGFloat = 84
-        let brushWidth = encoderWidth
-        let dividerCount = CGFloat(controlOrder.count)
-        let childCount = CGFloat(controlOrder.count + Int(dividerCount) + 1)
-        let totalSpacing = max(childCount - 1, 0) * spacing
-        let groupedButtonSpacing = controlOrder.reduce(CGFloat.zero) { total, item in
-            switch item {
-            case .history, .tools:
-                return total + spacing
-            case .brush, .pressure:
-                return total
-            }
-        }
-
-        let fixedWidth = controlOrder.reduce(optionsWidth + dividerCount * dividerWidth + totalSpacing + groupedButtonSpacing) { total, item in
-            switch item {
-            case .brush:
-                return total + brushWidth
-            case .pressure:
-                return total + readoutWidth
-            case .history, .tools:
-                return total
-            }
-        }
-
-        let flexibleUnits = controlOrder.reduce(CGFloat.zero) { total, item in
-            switch item {
-            case .history, .tools:
-                return total + 2
-            case .brush, .pressure:
-                return total
-            }
-        }
-
-        guard flexibleUnits > 0 else { return 0 }
-        return max((contentWidth - fixedWidth) / flexibleUnits, 1)
-    }
-
-    private func groupWidth(for item: ControlDeckItem, unitWidth: CGFloat, encoderWidth: CGFloat) -> CGFloat {
-        let spacing: CGFloat = 10
-        let readoutWidth: CGFloat = 96
-
-        switch item {
-        case .history, .tools:
-            return unitWidth * 2 + spacing
-        case .brush:
-            return encoderWidth
-        case .pressure:
-            return readoutWidth
+                .frame(width: 96)
         }
     }
 
@@ -189,17 +185,27 @@ struct ControlDeckView: View {
     }
 
     private var statusMenu: some View {
-        ControlOptionsPopoverButton(
-            mode: $connection.mode,
-            showsControls: $showsControls,
-            controlsPosition: $controlsPosition,
-            controlOrder: $controlOrder
-        ) {
+        Button {
+            showsOptions.toggle()
+        } label: {
             StatusOptionsModule(
                 color: statusColor,
                 stateText: connection.state.rawValue,
                 transport: connection.activeTransportLabel
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: ControlDeckMetrics.innerRadius))
+        }
+        .buttonStyle(.plain)
+        .frame(width: ControlDeckMetrics.optionsButtonWidth)
+        .layoutPriority(1.0)
+        .popover(isPresented: $showsOptions, attachmentAnchor: .rect(.bounds), arrowEdge: controlsPosition == .top ? .top : .bottom) {
+            ControlOptionsPanel(
+                mode: $connection.mode,
+                showsControls: $showsControls,
+                controlsPosition: $controlsPosition
+            )
+            .presentationCompactAdaptation(.popover)
         }
     }
 
@@ -222,4 +228,3 @@ struct ControlDeckView: View {
         "\(Int(connection.lastTiltDegrees.rounded()))°"
     }
 }
-#endif

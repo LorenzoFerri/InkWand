@@ -1,19 +1,9 @@
-#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 
-private enum ControlDeckMetrics {
+enum ControlDeckMetrics {
     static let outerRadius: CGFloat = 24
     static let innerRadius: CGFloat = 16
-    static let popoverWidth: CGFloat = 330
-    static let optionsPopoverHeight: CGFloat = 548
-    static let customizePopoverHeight: CGFloat = 486
-}
-
-struct ControlDeckBackground: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: ControlDeckMetrics.outerRadius, style: .continuous)
-            .liquidGlassSurface(cornerRadius: ControlDeckMetrics.outerRadius, tint: .black.opacity(0.28))
-    }
+    static let optionsButtonWidth: CGFloat = 84
 }
 
 struct PadButton: View {
@@ -26,7 +16,10 @@ struct PadButton: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.92))
                 .frame(minWidth: 44, maxWidth: .infinity, minHeight: 64, maxHeight: .infinity)
-                .background(GlassKeyShape())
+                .glassEffect(
+                    .regular.interactive(),
+                    in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
+                )
         }
         .buttonStyle(.plain)
     }
@@ -39,60 +32,30 @@ struct ToolPadButton: View {
     let action: () -> Void
 
     var body: some View {
+        button
+            .buttonStyle(.plain)
+    }
+
+    private var button: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: 16) {
                 Image(systemName: systemName)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isActive ? .white : .white.opacity(0.72))
                     .frame(height: 20)
-                Capsule()
-                    .fill(isActive ? .cyan.opacity(0.86) : .white.opacity(0.18))
-                    .frame(width: 30, height: 2)
+
                 Circle()
                     .fill(isActive ? .cyan.opacity(0.86) : .white.opacity(0.18))
                     .frame(width: 5, height: 5)
             }
+            .foregroundStyle(isActive ? .white : .white.opacity(0.72))
             .frame(minWidth: 44, maxWidth: .infinity, minHeight: 64, maxHeight: .infinity)
-            .background(GlassKeyShape(isActive: isActive))
+            .glassEffect(
+                isActive
+                    ? .regular.tint(.cyan.opacity(0.42)).interactive() : .regular.interactive(),
+                in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
+            )
             .accessibilityLabel(label)
         }
-        .buttonStyle(.plain)
-    }
-}
-
-struct UtilityPadButton: View {
-    let systemName: String
-    let title: String
-    var value: String?
-    var action: () -> Void = {}
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 5) {
-                Image(systemName: systemName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.88))
-                    .frame(height: 18)
-                Text(title)
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.64))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.62)
-                if let value {
-                    Text(value)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
-                } else {
-                    Capsule()
-                        .fill(.cyan.opacity(0.78))
-                        .frame(width: 22, height: 2)
-                }
-            }
-            .frame(width: 64)
-            .frame(minHeight: 64, maxHeight: .infinity)
-            .background(GlassKeyShape())
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -106,12 +69,10 @@ struct StatusOptionsModule: View {
             VStack(spacing: 4) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
                     .frame(height: 18)
 
                 Text("OPTIONS")
                     .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.62))
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
 
@@ -119,6 +80,7 @@ struct StatusOptionsModule: View {
                     .fill(.cyan.opacity(0.78))
                     .frame(width: 22, height: 2)
             }
+            .foregroundStyle(.white.opacity(0.82))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             HStack(spacing: 4) {
@@ -126,6 +88,7 @@ struct StatusOptionsModule: View {
                     .fill(color)
                     .frame(width: 5, height: 5)
                     .shadow(color: color.opacity(0.55), radius: 3)
+
                 Text(transport)
                     .font(.system(size: 7, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.58))
@@ -133,51 +96,12 @@ struct StatusOptionsModule: View {
                     .minimumScaleFactor(0.58)
             }
             .frame(maxWidth: .infinity)
+            .padding(.all, 8)
         }
-        .frame(width: 68)
+        .frame(width: ControlDeckMetrics.optionsButtonWidth)
         .frame(minHeight: 64, maxHeight: .infinity)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(GlassKeyShape())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(stateText), \(transport), options")
-    }
-}
-
-struct PadHoldButton: View {
-    let systemName: String
-    let label: String
-    @Binding var isPressed: Bool
-    let onPressChanged: (Bool) -> Void
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: systemName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(isPressed ? .cyan.opacity(0.92) : .white.opacity(0.82))
-                .frame(height: 20)
-            Text(label)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(.white.opacity(0.62))
-            Circle()
-                .fill(isPressed ? .cyan.opacity(0.86) : .white.opacity(0.18))
-                .frame(width: 5, height: 5)
-        }
-        .frame(minWidth: 44, maxWidth: .infinity, minHeight: 64, maxHeight: .infinity)
-        .background(GlassKeyShape(isActive: isPressed))
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !isPressed else { return }
-                    isPressed = true
-                    onPressChanged(true)
-                }
-                .onEnded { _ in
-                    guard isPressed else { return }
-                    isPressed = false
-                    onPressChanged(false)
-                }
-        )
     }
 }
 
@@ -192,245 +116,107 @@ struct ReadoutPanel: View {
             Text(title)
                 .font(.system(size: 8, weight: .bold))
                 .foregroundStyle(.white.opacity(0.54))
+
             Text(value)
                 .font(.system(size: 18, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.94))
                 .lineLimit(1)
+
             if let footnote {
                 Text(footnote)
                     .font(.system(size: 9, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.64))
                     .lineLimit(1)
             }
+
             AccentMeter(progress: progress)
         }
         .frame(width: 76, alignment: .leading)
         .frame(minHeight: 64, maxHeight: .infinity)
         .padding(.horizontal, 10)
-        .background(ReadoutBackground())
+        .glassEffect(
+            .regular.tint(.black.opacity(0.4)),
+            in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
+        )
     }
 }
 
-struct RelativeControlPanel: View {
-    let title: String
-    let value: String
-    let footnote: String
-    let direction: Int
+struct ControlOptionsPanel: View {
+    @Binding var mode: TabletConnectionMode
+    @Binding var showsControls: Bool
+    @Binding var controlsPosition: ControlsPosition
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(.white.opacity(0.54))
-            Text(value)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundStyle(direction == 0 ? .white.opacity(0.82) : .cyan.opacity(0.9))
-                .lineLimit(1)
-            Text(footnote)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(.white.opacity(0.54))
-                .lineLimit(1)
-            HStack(spacing: 4) {
-                Capsule()
-                    .fill(direction < 0 ? .cyan.opacity(0.86) : .white.opacity(0.20))
-                Capsule()
-                    .fill(direction == 0 ? .cyan.opacity(0.72) : .white.opacity(0.20))
-                Capsule()
-                    .fill(direction > 0 ? .cyan.opacity(0.86) : .white.opacity(0.20))
+        VStack(alignment: .leading, spacing: 14) {
+            ControlOptionsRow(
+                title: "Connection",
+                subtitle: "Transport mode",
+                systemName: "antenna.radiowaves.left.and.right"
+            ) {
+                Picker("Connection", selection: $mode) {
+                    ForEach(TabletConnectionMode.allCases) { mode in
+                        Label(mode.rawValue, systemImage: mode.symbolName)
+                            .tag(mode)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 2)
+
+            ControlOptionsRow(
+                title: "Controls",
+                subtitle: showsControls ? "Visible" : "Hidden",
+                systemName: showsControls ? "rectangle.topthird.inset.filled" : "rectangle.topthird.inset"
+            ) {
+                Toggle("Show Controls", isOn: $showsControls)
+                    .labelsHidden()
+            }
+
+            ControlOptionsRow(
+                title: "Position",
+                subtitle: "Deck placement",
+                systemName: "rectangle.3.group"
+            ) {
+                Picker("Position", selection: $controlsPosition) {
+                    ForEach(ControlsPosition.allCases) { position in
+                        Label(position.rawValue, systemImage: position.symbolName)
+                            .tag(position)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+            }
         }
-        .frame(width: 76, alignment: .leading)
-        .frame(minHeight: 64, maxHeight: .infinity)
-        .padding(.horizontal, 10)
-        .background(ReadoutBackground())
+        .padding(16)
     }
 }
 
-struct TelemetryTile: View {
+struct ControlOptionsRow<Control: View>: View {
+    let title: String
+    let subtitle: String
     let systemName: String
-    let title: String
-    let value: String
+    @ViewBuilder let control: () -> Control
 
     var body: some View {
-        VStack(spacing: 5) {
+        HStack(spacing: 12) {
             Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
-                .frame(height: 18)
-            Text(title)
-                .font(.system(size: 7, weight: .bold))
-                .foregroundStyle(.white.opacity(0.52))
-            Text(value)
-                .font(.system(size: 8, weight: .bold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.68))
-                .lineLimit(1)
-                .minimumScaleFactor(0.54)
-        }
-        .frame(width: 64)
-        .frame(minHeight: 64, maxHeight: .infinity)
-        .background(GlassKeyShape())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title) \(value)")
-    }
-}
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.cyan.opacity(0.86))
+                .frame(width: 26)
 
-struct StatusModule: View {
-    let color: Color
-    let stateText: String
-    let transport: String
-    let toolText: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 7) {
-                Circle()
-                    .fill(color)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: color.opacity(0.6), radius: 5)
-                Text(stateText)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.86))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 5) {
-                Text("\(transport) · \(toolText)")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
+            Spacer(minLength: 12)
+
+            control()
         }
-        .frame(width: 108, alignment: .leading)
-        .frame(minHeight: 64, maxHeight: .infinity)
-        .padding(.horizontal, 10)
-        .background(GlassKeyShape())
-    }
-}
-
-struct ControlOptionsPopoverButton<Label: View>: View {
-    @Binding var mode: TabletConnectionMode
-    @Binding var showsControls: Bool
-    @Binding var controlsPosition: ControlsPosition
-    @Binding var controlOrder: [ControlDeckItem]
-    @State private var showsPopover = false
-    @ViewBuilder let label: () -> Label
-
-    var body: some View {
-        Button {
-            showsPopover.toggle()
-        } label: {
-            label()
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $showsPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
-            ControlOptionsPopover(
-                mode: $mode,
-                showsControls: $showsControls,
-                controlsPosition: $controlsPosition,
-                controlOrder: $controlOrder
-            )
-            .presentationCompactAdaptation(.popover)
-        }
-    }
-}
-
-struct ControlOptionsPopover: View {
-    @Binding var mode: TabletConnectionMode
-    @Binding var showsControls: Bool
-    @Binding var controlsPosition: ControlsPosition
-    @Binding var controlOrder: [ControlDeckItem]
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Connection") {
-                    Picker("Mode", selection: $mode) {
-                        ForEach(TabletConnectionMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                }
-
-                Section("Controls") {
-                    Toggle("Show Controls", isOn: $showsControls)
-
-                    Picker("Controls Position", selection: $controlsPosition) {
-                        ForEach(ControlsPosition.allCases) { position in
-                            Text(position.rawValue).tag(position)
-                        }
-                    }
-                }
-
-                Section("Customize") {
-                    NavigationLink {
-                        ControlOrderEditor(controlOrder: $controlOrder)
-                    } label: {
-                        Label("Reorder Controls", systemImage: "slider.horizontal.3")
-                    }
-                }
-            }
-            .navigationTitle("Options")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .frame(width: ControlDeckMetrics.popoverWidth, height: ControlDeckMetrics.optionsPopoverHeight)
-    }
-}
-
-struct ControlOrderEditor: View {
-    @Binding var controlOrder: [ControlDeckItem]
-    @State private var editMode: EditMode = .active
-
-    var body: some View {
-        Form {
-            Section {
-                ForEach(controlOrder) { item in
-                    Label {
-                        Text(item.title)
-                    } icon: {
-                        Image(systemName: item.symbolName)
-                    }
-                }
-                .onMove(perform: move)
-            } header: {
-                Text("Drag controls to reorder the deck.")
-            }
-
-            Section {
-                Button {
-                    controlOrder = ControlDeckItem.defaultOrder
-                    ControlDeckItem.saveOrder(controlOrder)
-                } label: {
-                    Label("Reset Order", systemImage: "arrow.counterclockwise")
-                }
-            }
-        }
-        .environment(\.editMode, $editMode)
-        .navigationTitle("Reorder Controls")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func move(from source: IndexSet, to destination: Int) {
-        withAnimation(.snappy(duration: 0.18)) {
-            controlOrder.move(fromOffsets: source, toOffset: destination)
-        }
-        ControlDeckItem.saveOrder(controlOrder)
-    }
-}
-
-struct HiddenControlsButton: View {
-    var body: some View {
-        Image(systemName: "slider.horizontal.3")
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.88))
-            .frame(width: 48, height: 36)
-            .background(
-                Capsule()
-                    .liquidGlassSurface(cornerRadius: 18, tint: .black.opacity(0.24))
-            )
+        .frame(minHeight: 38)
     }
 }
 
@@ -451,77 +237,17 @@ struct AccentMeter: View {
     }
 }
 
-struct GlassKeyShape: View {
-    var isActive = false
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: ControlDeckMetrics.innerRadius, style: .continuous)
-            .liquidGlassSurface(
-                cornerRadius: ControlDeckMetrics.innerRadius,
-                tint: isActive ? .cyan.opacity(0.20) : .black.opacity(0.18)
-            )
-    }
-}
-
-struct ReadoutBackground: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: ControlDeckMetrics.innerRadius, style: .continuous)
-            .fill(.black.opacity(0.16))
-            .overlay(
-                RoundedRectangle(cornerRadius: ControlDeckMetrics.innerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
-            )
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: ControlDeckMetrics.innerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(0.10), lineWidth: 0.6)
-                    .blendMode(.screen)
-            }
-    }
-}
-
 struct DeckDivider: View {
+    let color: Color
+    let width: CGFloat
+
+    init(color: Color = .white.opacity(0.08), width: CGFloat = 0.5) {
+        self.color = color
+        self.width = width
+    }
+
     var body: some View {
-        Capsule()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        .clear,
-                        .white.opacity(0.13),
-                        .white.opacity(0.05),
-                        .clear
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .frame(width: 1)
-            .frame(minHeight: 58, maxHeight: .infinity)
+        color
+            .frame(width: width)
     }
 }
-
-private extension View {
-    func liquidGlassSurface(cornerRadius: CGFloat, tint: Color) -> some View {
-        modifier(LiquidGlassSurface(cornerRadius: cornerRadius, tint: tint))
-    }
-}
-
-private struct LiquidGlassSurface: ViewModifier {
-    let cornerRadius: CGFloat
-    let tint: Color
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .foregroundStyle(.clear)
-                .glassEffect(
-                    .regular.tint(tint),
-                    in: .rect(cornerRadius: cornerRadius)
-                )
-        } else {
-            content
-                .foregroundStyle(.clear)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
-    }
-}
-#endif
