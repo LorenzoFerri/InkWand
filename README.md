@@ -7,9 +7,17 @@ Use an iPad with Apple Pencil as a native Linux graphics tablet.
 InkWand has two parts:
 
 - `InkWand`: the iPad app, built with `xtool`.
-- `InkWandServer`: the Linux server, written in Swift, exposing a virtual pen through `/dev/uinput`.
+- `InkWandServer`: the Linux server, written in Swift, exposing virtual pen, touch, and pad devices through `/dev/uinput`.
 
 The server supports both USB and Wi-Fi. Monitor/output mapping is left to the desktop environment, like with a real tablet.
+
+## Features
+
+- Apple Pencil input with pressure and tilt.
+- Pen and eraser tool modes.
+- Native Linux multitouch gestures, including two-finger pinch/zoom in apps such as Krita.
+- Pad actions for undo, redo, brush size, and pan.
+- USB and Wi-Fi transport with low-latency TCP settings.
 
 ## Requirements
 
@@ -43,10 +51,14 @@ sudo .build/release/InkWandServer
 By default the server:
 
 - creates `InkWand Virtual Pen`
+- creates `InkWand Touch Surface`
+- creates `InkWand Pad`
 - enables USB through `iproxy`
 - listens for Wi-Fi on port `24817`
 - publishes `_inkwand._tcp`
 - reconnects automatically
+
+On X11, InkWand tries to map the virtual pen and touch devices to the full desktop during the first input events. On Wayland, mapping is compositor-managed.
 
 Useful options:
 
@@ -78,6 +90,8 @@ sudo .build/release/InkWandServer service install
 sudo systemctl enable --now inkwand-server.service
 ```
 
+The service installer also writes an input udev rule at `/etc/udev/rules.d/90-inkwand-input.rules`. It grants access to `/dev/uinput` and groups the InkWand pen, touch, and pad devices for libinput.
+
 Logs:
 
 ```bash
@@ -102,6 +116,13 @@ You can open the app and server in any order.
 
 ## Troubleshooting
 
+If pen input works but multitouch gestures do not show up in Krita:
+
+- restart `InkWandServer` after installing or updating the service rule
+- reconnect the iPad app
+- make sure Krita is using canvas gestures for touch input
+- run the server with `--verbose` and check for `touch began`, `touch ended`, and `session input summary` log lines
+
 If Wi-Fi discovery works but connection hangs, open the firewall port:
 
 ```bash
@@ -113,3 +134,5 @@ If `/dev/uinput` is missing:
 ```bash
 sudo modprobe uinput
 ```
+
+If the server can open `/dev/uinput` only as root, install the service or add an equivalent udev rule for your system.
