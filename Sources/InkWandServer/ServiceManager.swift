@@ -16,7 +16,8 @@ struct ServiceInstallOptions {
 enum ServiceManager {
     static let defaultBinaryPath = "/usr/local/bin/InkWandServer"
     static let defaultServicePath = "/etc/systemd/system/inkwand-server.service"
-    static let defaultUdevRulePath = "/etc/udev/rules.d/70-inkwand-uinput.rules"
+    static let defaultUdevRulePath = "/etc/udev/rules.d/90-inkwand-input.rules"
+    private static let legacyUdevRulePath = "/etc/udev/rules.d/70-inkwand-uinput.rules"
 
     static func install(options: ServiceInstallOptions) throws {
         guard Privilege.requireRoot(commandDescription: "Service installation") else {
@@ -26,11 +27,15 @@ enum ServiceManager {
         let sourcePath = try currentExecutablePath()
         try copyExecutable(from: sourcePath, to: options.binaryPath)
         try writeFile(systemdUnit(binaryPath: options.binaryPath, port: options.port), to: options.servicePath)
+        if options.udevRulePath != legacyUdevRulePath {
+            try removeFileIfExists(legacyUdevRulePath)
+        }
         try writeFile(udevRule(), to: options.udevRulePath)
 
         _ = try? run("systemctl", ["daemon-reload"])
         _ = try? run("udevadm", ["control", "--reload-rules"])
         _ = try? run("udevadm", ["trigger", "--subsystem-match=misc"])
+        _ = try? run("udevadm", ["trigger", "--subsystem-match=input"])
 
         print("Installed InkWandServer binary: \(options.binaryPath)")
         print("Installed systemd service: \(options.servicePath)")
@@ -51,6 +56,9 @@ enum ServiceManager {
         _ = try? run("systemctl", ["disable", "--now", "inkwand-server.service"])
         try removeFileIfExists(options.servicePath)
         try removeFileIfExists(options.udevRulePath)
+        if options.udevRulePath != legacyUdevRulePath {
+            try removeFileIfExists(legacyUdevRulePath)
+        }
         try removeFileIfExists(options.binaryPath)
         _ = try? run("systemctl", ["daemon-reload"])
         _ = try? run("udevadm", ["control", "--reload-rules"])
@@ -114,6 +122,9 @@ enum ServiceManager {
     private static func udevRule() -> String {
         """
         KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"
+        SUBSYSTEM=="input", ATTRS{name}=="InkWand Virtual Pen", ENV{LIBINPUT_DEVICE_GROUP}="inkwand"
+        SUBSYSTEM=="input", ATTRS{name}=="InkWand Touch Surface", ENV{LIBINPUT_DEVICE_GROUP}="inkwand"
+        SUBSYSTEM=="input", ATTRS{name}=="InkWand Pad", ENV{LIBINPUT_DEVICE_GROUP}="inkwand"
         """
     }
 

@@ -7,6 +7,7 @@ final class UInputPadDevice {
     private let fd: Int32
     private var isDestroyed = false
     private var isPanning = false
+    private let tapHoldMicroseconds: useconds_t = 25_000
 
     init() throws {
         let opened = "/dev/uinput".withCString { path in
@@ -75,16 +76,18 @@ final class UInputPadDevice {
     }
 
     private func configure() throws {
+        try setString(request: LinuxInput.uiSetPhys, value: "inkwand/pad")
+
         try setBit(request: LinuxInput.uiSetEvBit, value: LinuxInput.evKey)
         try setBit(request: LinuxInput.uiSetEvBit, value: LinuxInput.evSyn)
 
-        for code in Self.supportedKeys {
+        for code in LinuxInput.keyEsc...LinuxInput.keyMicMute {
             try setBit(request: LinuxInput.uiSetKeyBit, value: code)
         }
 
         if try !configureWithModernUInput() {
             var userDevice = UInputPadUserDeviceBuffer(name: "InkWand Pad")
-            userDevice.setInputID(busType: LinuxInput.busUSB, vendor: 0x1209, product: 0x1A0E, version: 1)
+            userDevice.setInputID(busType: LinuxInput.busVirtual, vendor: 0x1701, product: 0x1701, version: 1)
             try userDevice.write(to: fd)
         }
 
@@ -95,7 +98,7 @@ final class UInputPadDevice {
 
     private func configureWithModernUInput() throws -> Bool {
         var setup = UInputPadSetupBuffer(name: "InkWand Pad")
-        setup.setInputID(busType: LinuxInput.busUSB, vendor: 0x1209, product: 0x1A0E, version: 1)
+        setup.setInputID(busType: LinuxInput.busVirtual, vendor: 0x1701, product: 0x1701, version: 1)
 
         guard linuxIoctlBytes(fd, LinuxInput.uiDevSetup, &setup.bytes) == 0 else {
             if errno == EINVAL {
@@ -112,6 +115,7 @@ final class UInputPadDevice {
             try key(code, 1)
         }
         try sync()
+        usleep(tapHoldMicroseconds)
 
         for code in keys.reversed() {
             try key(code, 0)
@@ -126,6 +130,12 @@ final class UInputPadDevice {
     private func setBit(request: UInt, value: Int32) throws {
         guard linuxIoctl(fd, request, value) == 0 else {
             throw ServerError.posix("ioctl", errno)
+        }
+    }
+
+    private func setString(request: UInt, value: String) throws {
+        guard linuxIoctlString(fd, request, value) == 0 else {
+            throw ServerError.posix("ioctl string", errno)
         }
     }
 
@@ -144,14 +154,6 @@ final class UInputPadDevice {
         try writeEvent(type: LinuxInput.evSyn, code: LinuxInput.synReport, value: 0)
     }
 
-    private static let supportedKeys = [
-        LinuxInput.keyLeftCtrl,
-        LinuxInput.keyLeftShift,
-        LinuxInput.keyZ,
-        LinuxInput.keySpace,
-        LinuxInput.keyLeftBrace,
-        LinuxInput.keyRightBrace,
-    ]
 }
 
 private struct UInputPadSetupBuffer {

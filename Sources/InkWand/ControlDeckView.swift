@@ -153,13 +153,13 @@ struct ControlDeckView: View {
         HStack(spacing: 10) {
             ToolPadButton(systemName: "pencil.tip", label: "PEN", isActive: connection.tool == .pen) {
                 if connection.tool != .pen {
-                    connection.toggleTool()
+                    connection.setTool(.pen)
                 }
             }
 
             ToolPadButton(systemName: "eraser", label: "ERASE", isActive: connection.tool == .eraser) {
                 if connection.tool != .eraser {
-                    connection.toggleTool()
+                    connection.setTool(.eraser)
                 }
             }
         }

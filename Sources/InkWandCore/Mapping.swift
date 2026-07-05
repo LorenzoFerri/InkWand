@@ -9,6 +9,7 @@ public struct MappedPenEvent: Equatable, Sendable {
     public var tool: PencilTool
     public var isTouching: Bool
     public var isToolPresent: Bool
+    public var timestamp: UInt64
 
     public init(
         x: Int32,
@@ -18,7 +19,8 @@ public struct MappedPenEvent: Equatable, Sendable {
         tiltY: Int32 = 0,
         tool: PencilTool = .pen,
         isTouching: Bool,
-        isToolPresent: Bool
+        isToolPresent: Bool,
+        timestamp: UInt64 = 0
     ) {
         self.x = x
         self.y = y
@@ -28,6 +30,7 @@ public struct MappedPenEvent: Equatable, Sendable {
         self.tool = tool
         self.isTouching = isTouching
         self.isToolPresent = isToolPresent
+        self.timestamp = timestamp
     }
 }
 
@@ -36,7 +39,7 @@ public struct TabletMapper: Sendable {
     public var maxY: Int32
     public var maxPressure: Int32
 
-    public init(maxX: Int32 = 32767, maxY: Int32 = 32767, maxPressure: Int32 = 4096) {
+    public init(maxX: Int32 = 65535, maxY: Int32 = 65535, maxPressure: Int32 = 65535) {
         self.maxX = maxX
         self.maxY = maxY
         self.maxPressure = maxPressure
@@ -57,7 +60,8 @@ public struct TabletMapper: Sendable {
             tiltY: tilt.y,
             tool: sample.tool,
             isTouching: touching,
-            isToolPresent: touching
+            isToolPresent: touching,
+            timestamp: sample.timestamp
         )
     }
 

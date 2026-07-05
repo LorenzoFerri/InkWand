@@ -20,6 +20,7 @@ final class TabletClient: @unchecked Sendable {
         self.port = 0
         self.verbose = verbose
         self.fd = acceptedFileDescriptor
+        Self.setLowLatency(fd)
     }
 
     deinit {
@@ -35,6 +36,7 @@ final class TabletClient: @unchecked Sendable {
         guard fd >= 0 else {
             throw ServerError.posix("socket", errno)
         }
+        Self.setLowLatency(fd)
 
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
@@ -95,6 +97,11 @@ final class TabletClient: @unchecked Sendable {
             _ = Glibc.close(fd)
             fd = -1
         }
+    }
+
+    private static func setLowLatency(_ fd: Int32) {
+        var enabled: Int32 = 1
+        _ = setsockopt(fd, Int32(IPPROTO_TCP), TCP_NODELAY, &enabled, socklen_t(MemoryLayout<Int32>.size))
     }
 }
 #endif

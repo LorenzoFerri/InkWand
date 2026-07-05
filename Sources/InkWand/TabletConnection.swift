@@ -113,21 +113,55 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         self.mode = mode
     }
 
-    func toggleTool() {
-        queue.async {
-            let nextTool: PencilTool = self.currentTool == .pen ? .eraser : .pen
-            self.currentTool = nextTool
-            self.sendMessage(.tool(nextTool))
+    @MainActor
+    func setTool(_ nextTool: PencilTool) {
+        guard currentTool != nextTool else { return }
+        currentTool = nextTool
+        tool = nextTool
 
-            DispatchQueue.main.async {
-                self.tool = nextTool
-            }
+        queue.async {
+            self.sendMessage(.tool(nextTool))
+        }
+    }
+
+    func toggleTool() {
+        Task { @MainActor in
+            setTool(currentTool == .pen ? .eraser : .pen)
         }
     }
 
     func sendPadAction(_ action: PadAction) {
         queue.async {
             self.sendMessage(.pad(action))
+        }
+    }
+
+    func cancelInputState() {
+        queue.async {
+            self.sendMessage(.cancel)
+        }
+    }
+
+    func sendGesture(_ gesture: CanvasGesture) {
+        queue.async {
+            guard self.connection != nil else { return }
+            self.sendMessage(.gesture(gesture))
+        }
+    }
+
+    func sendTouch(_ touch: TouchSample) {
+        queue.async {
+            guard self.connection != nil else { return }
+            self.sendMessage(.touch(touch))
+        }
+    }
+
+    func sendTouchFrame(_ touches: [TouchSample]) {
+        guard !touches.isEmpty else { return }
+
+        queue.async {
+            guard self.connection != nil else { return }
+            self.sendMessage(.touchFrame(touches))
         }
     }
 
@@ -163,7 +197,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
 
     private func startUSBListener() {
         do {
-            let listener = try NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: port)!)
+            let listener = try NWListener(using: Self.lowLatencyTCPParameters(), on: NWEndpoint.Port(rawValue: port)!)
             listener.newConnectionHandler = { [weak self] newConnection in
                 self?.acceptUSB(newConnection)
             }
@@ -194,7 +228,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
 
     private func startWiFiBrowser() {
         let descriptor = NWBrowser.Descriptor.bonjour(type: "_inkwand._tcp", domain: nil)
-        let browser = NWBrowser(for: descriptor, using: .tcp)
+        let browser = NWBrowser(for: descriptor, using: Self.lowLatencyTCPParameters())
 
         browser.stateUpdateHandler = { [weak self] state in
             guard let self else { return }
@@ -312,7 +346,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         pendingWiFiEndpoint = endpoint
         publishState(.connecting, transport: "Wi-Fi", detail: "Bonjour \(endpoint)")
 
-        let newConnection = NWConnection(to: endpoint, using: .tcp)
+        let newConnection = NWConnection(to: endpoint, using: Self.lowLatencyTCPParameters())
         accept(newConnection, transport: .wifi)
     }
 
@@ -331,7 +365,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         isWiFiConnecting = true
         publishState(.connecting, transport: "Wi-Fi", detail: detail)
 
-        let newConnection = NWConnection(host: NWEndpoint.Host(host), port: endpointPort, using: .tcp)
+        let newConnection = NWConnection(host: NWEndpoint.Host(host), port: endpointPort, using: Self.lowLatencyTCPParameters())
         accept(newConnection, transport: .wifi)
     }
 
@@ -540,6 +574,12 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         } catch {
             print("InkWand encode failed: \(error)")
         }
+    }
+
+    private static func lowLatencyTCPParameters() -> NWParameters {
+        let tcpOptions = NWProtocolTCP.Options()
+        tcpOptions.noDelay = true
+        return NWParameters(tls: nil, tcp: tcpOptions)
     }
 
     private func publishState(_ state: TabletConnectionState, transport: String? = nil, detail: String? = nil) {

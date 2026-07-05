@@ -42,8 +42,14 @@ struct RunCommand: ParsableCommand {
         let usbLocalPort = port + 1
         let mapper = TabletMapper()
         let device = try UInputPenDevice(maxX: mapper.maxX, maxY: mapper.maxY, maxPressure: mapper.maxPressure)
+        let touchDevice = try UInputTouchDevice(maxX: mapper.maxX, maxY: mapper.maxY)
         let padDevice = try UInputPadDevice()
-        let coordinator = TabletSessionCoordinator(device: device, padDevice: padDevice, verbose: verbose)
+        let coordinator = TabletSessionCoordinator(
+            device: device,
+            padDevice: padDevice,
+            touchDevice: touchDevice,
+            verbose: verbose
+        )
         let wifiListener = noWiFi ? nil : WiFiTabletListener(port: port, verbose: verbose, coordinator: coordinator)
         let udpDiscovery = noWiFi ? nil : UDPDiscoveryResponder(port: port, verbose: verbose)
         let shutdown = ShutdownCoordinator()
@@ -79,7 +85,7 @@ struct RunCommand: ParsableCommand {
         }
 
         ServerLog.info("InkWandServer is ready. Open InkWand on the iPad when you want to draw.")
-        ServerLog.info("Enabled transports: \(enabledTransportDescription). Monitor/output mapping is handled by your desktop environment.")
+        ServerLog.info("Enabled transports: \(enabledTransportDescription). On X11, InkWand will try to map virtual input devices to the full desktop during the first input events.")
         let addresses = NetworkInterfaces.localIPv4Addresses()
         if addresses.isEmpty {
             ServerLog.info("No non-loopback IPv4 address detected for manual Wi-Fi connection.")
@@ -188,7 +194,7 @@ struct ServiceCommand: ParsableCommand {
 struct ServiceInstallCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "install",
-        abstract: "Install the current InkWandServer binary, systemd service, and uinput udev rule."
+        abstract: "Install the current InkWandServer binary, systemd service, and input udev rule."
     )
 
     @Option(help: "TCP/UDP port used by InkWand Wi-Fi mode.")
@@ -200,7 +206,7 @@ struct ServiceInstallCommand: ParsableCommand {
     @Option(help: "Destination path for the systemd unit file.")
     var servicePath = ServiceManager.defaultServicePath
 
-    @Option(help: "Destination path for the uinput udev rule.")
+    @Option(help: "Destination path for the input udev rule.")
     var udevRulePath = ServiceManager.defaultUdevRulePath
 
     mutating func run() throws {
@@ -218,7 +224,7 @@ struct ServiceInstallCommand: ParsableCommand {
 struct ServiceUninstallCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "uninstall",
-        abstract: "Disable and remove the InkWandServer systemd service, udev rule, and installed binary."
+        abstract: "Disable and remove the InkWandServer systemd service, input udev rule, and installed binary."
     )
 
     @Option(help: "TCP/UDP port used by InkWand Wi-Fi mode.")
@@ -230,7 +236,7 @@ struct ServiceUninstallCommand: ParsableCommand {
     @Option(help: "Path of the systemd unit file.")
     var servicePath = ServiceManager.defaultServicePath
 
-    @Option(help: "Path of the uinput udev rule.")
+    @Option(help: "Path of the input udev rule.")
     var udevRulePath = ServiceManager.defaultUdevRulePath
 
     mutating func run() throws {

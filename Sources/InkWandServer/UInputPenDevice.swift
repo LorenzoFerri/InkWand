@@ -9,6 +9,10 @@ final class UInputPenDevice {
     private let maxY: Int32
     private let maxPressure: Int32
     private var isDestroyed = false
+    private var activeTool: PencilTool?
+    private var isTouching = false
+    private var lastEventDate = Date.distantPast
+    private let toolSwitchSettleMicroseconds: useconds_t = 10_000
 
     init(maxX: Int32, maxY: Int32, maxPressure: Int32) throws {
         self.maxX = maxX
@@ -37,50 +41,102 @@ final class UInputPenDevice {
         destroy()
     }
 
-    func emit(_ event: MappedPenEvent) throws {
+    func emitDownOrMove(_ event: MappedPenEvent) throws {
+        lastEventDate = Date()
+
+        if let activeTool, activeTool != event.tool {
+            try switchTool(to: event.tool, timestamp: event.timestamp)
+        } else if activeTool == nil {
+            try setActiveTool(event.tool)
+        }
+
+        if !isTouching {
+            try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnTouch, value: 1)
+            isTouching = true
+        }
+
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absX, value: event.x)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absY, value: event.y)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absPressure, value: event.pressure)
-        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absDistance, value: event.isToolPresent ? 0 : 1)
+        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absDistance, value: 0)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absTiltX, value: event.tiltX)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absTiltY, value: event.tiltY)
-        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscSerial, value: 1)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolPen, value: event.isToolPresent && event.tool == .pen ? 1 : 0)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolRubber, value: event.isToolPresent && event.tool == .eraser ? 1 : 0)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnTouch, value: event.isTouching ? 1 : 0)
+        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscTimestamp, value: Self.timestampValue(event.timestamp))
         try sync()
     }
 
-    func release() throws {
-        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absPressure, value: 0)
-        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absDistance, value: 1)
-        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscSerial, value: 1)
+    @discardableResult
+    func release(timestamp: UInt64 = 0) throws -> Bool {
+        guard hasActiveState else { return false }
+
+        try emitToolOut(timestamp: timestamp)
+        return true
+    }
+
+    func switchTool(to tool: PencilTool, timestamp: UInt64 = 0) throws {
+        guard activeTool != tool else {
+            try liftTouch(tool: tool, timestamp: timestamp)
+            return
+        }
+
+        if hasActiveState {
+            try emitToolOut(timestamp: timestamp)
+            usleep(toolSwitchSettleMicroseconds)
+        }
+
+        try liftTouch(tool: tool, timestamp: timestamp)
+    }
+
+    private func emitToolOut(timestamp: UInt64) throws {
         try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnTouch, value: 0)
         try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolPen, value: 0)
         try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolRubber, value: 0)
+        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absPressure, value: 0)
+        try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absDistance, value: 1)
+        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscTimestamp, value: Self.timestampValue(timestamp))
         try sync()
+        activeTool = nil
+        isTouching = false
+        lastEventDate = Date()
     }
 
-    func liftTouch(tool: PencilTool = .pen) throws {
+    func releaseIfStale(minimumAge: TimeInterval, timestamp: UInt64 = 0) throws -> Bool {
+        guard hasActiveState, Date().timeIntervalSince(lastEventDate) >= minimumAge else {
+            return false
+        }
+
+        return try release(timestamp: timestamp)
+    }
+
+    func releaseHover(timestamp: UInt64 = 0) throws -> Bool {
+        guard activeTool != nil, !isTouching else { return false }
+        return try release(timestamp: timestamp)
+    }
+
+    func liftTouch(tool: PencilTool = .pen, timestamp: UInt64 = 0) throws {
+        try setActiveTool(tool)
+        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnTouch, value: 0)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absPressure, value: 0)
         try writeEvent(type: LinuxInput.evAbs, code: LinuxInput.absDistance, value: 0)
-        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscSerial, value: 1)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolPen, value: tool == .pen ? 1 : 0)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolRubber, value: tool == .eraser ? 1 : 0)
-        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnTouch, value: 0)
+        try writeEvent(type: LinuxInput.evMsc, code: LinuxInput.mscTimestamp, value: Self.timestampValue(timestamp))
         try sync()
+        activeTool = tool
+        isTouching = false
+        lastEventDate = Date()
     }
 
     func destroy() {
         guard !isDestroyed else { return }
         isDestroyed = true
 
-        try? release()
+        _ = try? release()
         _ = linuxIoctl(fd, LinuxInput.uiDevDestroy)
         _ = Glibc.close(fd)
     }
 
     private func configure() throws {
+        try setString(request: LinuxInput.uiSetPhys, value: "inkwand/pen")
+
         try setBit(request: LinuxInput.uiSetEvBit, value: LinuxInput.evKey)
         try setBit(request: LinuxInput.uiSetEvBit, value: LinuxInput.evAbs)
         try setBit(request: LinuxInput.uiSetEvBit, value: LinuxInput.evMsc)
@@ -90,8 +146,6 @@ final class UInputPenDevice {
         try setBit(request: LinuxInput.uiSetKeyBit, value: LinuxInput.btnToolPen)
         try setBit(request: LinuxInput.uiSetKeyBit, value: LinuxInput.btnToolRubber)
         try setBit(request: LinuxInput.uiSetKeyBit, value: LinuxInput.btnTouch)
-        try setBit(request: LinuxInput.uiSetKeyBit, value: LinuxInput.btnStylus)
-        try setBit(request: LinuxInput.uiSetKeyBit, value: LinuxInput.btnStylus2)
 
         try setBit(request: LinuxInput.uiSetAbsBit, value: LinuxInput.absX)
         try setBit(request: LinuxInput.uiSetAbsBit, value: LinuxInput.absY)
@@ -99,11 +153,11 @@ final class UInputPenDevice {
         try setBit(request: LinuxInput.uiSetAbsBit, value: LinuxInput.absDistance)
         try setBit(request: LinuxInput.uiSetAbsBit, value: LinuxInput.absTiltX)
         try setBit(request: LinuxInput.uiSetAbsBit, value: LinuxInput.absTiltY)
-        try setBit(request: LinuxInput.uiSetMscBit, value: LinuxInput.mscSerial)
+        try setBit(request: LinuxInput.uiSetMscBit, value: LinuxInput.mscTimestamp)
 
         if try !configureWithModernUInput() {
-            var userDevice = UInputUserDeviceBuffer(name: "InkWand Virtual Pen")
-            userDevice.setInputID(busType: LinuxInput.busUSB, vendor: 0x1209, product: 0x1A0D, version: 1)
+            var userDevice = UInputUserDeviceBuffer(name: Self.deviceName)
+            userDevice.setInputID(busType: LinuxInput.busVirtual, vendor: 0x1701, product: 0x1701, version: 1)
             userDevice.setAbsoluteAxis(code: LinuxInput.absX, minimum: 0, maximum: maxX)
             userDevice.setAbsoluteAxis(code: LinuxInput.absY, minimum: 0, maximum: maxY)
             userDevice.setAbsoluteAxis(code: LinuxInput.absPressure, minimum: 0, maximum: maxPressure)
@@ -120,8 +174,15 @@ final class UInputPenDevice {
     }
 
     private func configureWithModernUInput() throws -> Bool {
-        var setup = UInputSetupBuffer(name: "InkWand Virtual Pen")
-        setup.setInputID(busType: LinuxInput.busUSB, vendor: 0x1209, product: 0x1A0D, version: 1)
+        var setup = UInputSetupBuffer(name: Self.deviceName)
+        setup.setInputID(busType: LinuxInput.busVirtual, vendor: 0x1701, product: 0x1701, version: 1)
+
+        try setupAxis(code: LinuxInput.absX, minimum: 0, maximum: maxX, resolution: 12)
+        try setupAxis(code: LinuxInput.absY, minimum: 0, maximum: maxY, resolution: 12)
+        try setupAxis(code: LinuxInput.absPressure, minimum: 0, maximum: maxPressure, resolution: 12)
+        try setupAxis(code: LinuxInput.absDistance, minimum: 0, maximum: 1, resolution: 0)
+        try setupAxis(code: LinuxInput.absTiltX, minimum: -90, maximum: 90, resolution: 12)
+        try setupAxis(code: LinuxInput.absTiltY, minimum: -90, maximum: 90, resolution: 12)
 
         guard linuxIoctlBytes(fd, LinuxInput.uiDevSetup, &setup.bytes) == 0 else {
             if errno == EINVAL {
@@ -129,13 +190,6 @@ final class UInputPenDevice {
             }
             throw ServerError.posix("UI_DEV_SETUP", errno)
         }
-
-        try setupAxis(code: LinuxInput.absX, minimum: 0, maximum: maxX, resolution: 100)
-        try setupAxis(code: LinuxInput.absY, minimum: 0, maximum: maxY, resolution: 100)
-        try setupAxis(code: LinuxInput.absPressure, minimum: 0, maximum: maxPressure, resolution: 0)
-        try setupAxis(code: LinuxInput.absDistance, minimum: 0, maximum: 1, resolution: 0)
-        try setupAxis(code: LinuxInput.absTiltX, minimum: -90, maximum: 90, resolution: 0)
-        try setupAxis(code: LinuxInput.absTiltY, minimum: -90, maximum: 90, resolution: 0)
 
         return true
     }
@@ -153,6 +207,12 @@ final class UInputPenDevice {
         }
     }
 
+    private func setString(request: UInt, value: String) throws {
+        guard linuxIoctlString(fd, request, value) == 0 else {
+            throw ServerError.posix("ioctl string", errno)
+        }
+    }
+
     private func writeEvent(type: Int32, code: Int32, value: Int32) throws {
         var event = LinuxInputEvent(type: type, code: code, value: value)
         let written = withUnsafeBytes(of: &event) { bytes in
@@ -167,9 +227,25 @@ final class UInputPenDevice {
     private func sync() throws {
         try writeEvent(type: LinuxInput.evSyn, code: LinuxInput.synReport, value: 0)
     }
+
+    private func setActiveTool(_ tool: PencilTool) throws {
+        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolPen, value: tool == .pen ? 1 : 0)
+        try writeEvent(type: LinuxInput.evKey, code: LinuxInput.btnToolRubber, value: tool == .eraser ? 1 : 0)
+        activeTool = tool
+    }
+
+    private var hasActiveState: Bool {
+        isTouching || activeTool != nil
+    }
+
+    private static func timestampValue(_ timestamp: UInt64) -> Int32 {
+        Int32(timestamp % (UInt64(Int32.max) + 1))
+    }
+
+    static let deviceName = "InkWand Virtual Pen"
 }
 
-private struct UInputSetupBuffer {
+struct UInputSetupBuffer {
     private static let byteCount = 8 + 80 + 4
     private static let nameOffset = 8
     private static let ffEffectsOffset = 88
@@ -207,7 +283,7 @@ private struct UInputSetupBuffer {
     }
 }
 
-private struct UInputAbsSetupBuffer {
+struct UInputAbsSetupBuffer {
     private static let byteCount = 28
 
     var bytes = [UInt8](repeating: 0, count: byteCount)
