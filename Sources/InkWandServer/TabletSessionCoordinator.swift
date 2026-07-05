@@ -274,7 +274,7 @@ final class TabletSessionCoordinator: @unchecked Sendable {
 
     private func prepareForPadAction(_ action: PadAction) throws {
         switch action {
-        case .undo, .redo, .brushSmaller, .brushLarger:
+        case .undo, .redo, .brushSmaller, .brushLarger, .opacityLower, .opacityHigher:
             let releasedPen = try device.release()
             try touchDevice.release()
             try padDevice.release()

@@ -42,6 +42,10 @@ final class UInputPadDevice {
             try tap([LinuxInput.keyLeftBrace])
         case .brushLarger:
             try tap([LinuxInput.keyRightBrace])
+        case .opacityLower:
+            try tap([LinuxInput.keyI])
+        case .opacityHigher:
+            try tap([LinuxInput.keyO])
         case .panBegan:
             guard !isPanning else { return }
             isPanning = true
@@ -63,6 +67,8 @@ final class UInputPadDevice {
         try key(LinuxInput.keySpace, 0)
         try key(LinuxInput.keyLeftBrace, 0)
         try key(LinuxInput.keyRightBrace, 0)
+        try key(LinuxInput.keyI, 0)
+        try key(LinuxInput.keyO, 0)
         try sync()
     }
 

@@ -31,6 +31,8 @@ public enum PadAction: String, Codable, Sendable {
     case redo
     case brushSmaller
     case brushLarger
+    case opacityLower
+    case opacityHigher
     case panBegan
     case panEnded
 }

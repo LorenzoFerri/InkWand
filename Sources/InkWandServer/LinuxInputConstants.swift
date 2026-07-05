@@ -23,6 +23,8 @@ enum LinuxInput {
     static let keyLeftCtrl: Int32 = 0x1d
     static let keyLeftShift: Int32 = 0x2a
     static let keyZ: Int32 = 0x2c
+    static let keyI: Int32 = 0x17
+    static let keyO: Int32 = 0x18
     static let keySpace: Int32 = 0x39
     static let keyLeftBrace: Int32 = 0x1a
     static let keyRightBrace: Int32 = 0x1b

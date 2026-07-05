@@ -5,7 +5,6 @@ enum ControlDeckItem: String, CaseIterable, Identifiable {
     case history
     case brush
     case tools
-    case pan
     case pressure
 
     var id: String { rawValue }
@@ -18,8 +17,6 @@ enum ControlDeckItem: String, CaseIterable, Identifiable {
             return "Brush"
         case .tools:
             return "Pen / Eraser"
-        case .pan:
-            return "Pan"
         case .pressure:
             return "Pressure"
         }
@@ -30,18 +27,16 @@ enum ControlDeckItem: String, CaseIterable, Identifiable {
         case .history:
             return "arrow.uturn.backward.circle"
         case .brush:
-            return "dial.medium"
+            return "arrow.left.arrow.right.circle"
         case .tools:
             return "pencil.and.scribble"
-        case .pan:
-            return "hand.raised"
         case .pressure:
             return "gauge.with.dots.needle.bottom.50percent"
         }
     }
 
     static let defaultsKey = "InkWand.ControlDeckOrder"
-    static let defaultOrder: [ControlDeckItem] = [.history, .brush, .tools, .pan, .pressure]
+    static let defaultOrder: [ControlDeckItem] = [.history, .brush, .tools, .pressure]
 
     static func loadOrder() -> [ControlDeckItem] {
         guard let storedValue = UserDefaults.standard.string(forKey: defaultsKey) else {

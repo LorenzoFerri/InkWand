@@ -7,17 +7,16 @@ struct ControlDeckView: View {
     @Binding var showsControls: Bool
     @Binding var controlsPosition: ControlsPosition
     @Binding var controlOrder: [ControlDeckItem]
-    @State private var isPanPressed = false
-    @State private var brushStepDirection = 0
 
     var body: some View {
         GeometryReader { proxy in
             let deckInset: CGFloat = 8
             let itemHeight = max(proxy.size.height - deckInset * 2, 64)
-            let knobSize = max(itemHeight - 18, 52)
+            let encoderRowHeight = max((itemHeight - 8) / 2, 26)
+            let encoderWidth = max(encoderRowHeight * 8.2, 230)
             let contentWidth = proxy.size.width - deckInset * 2
 
-            controlDeckItems(knobSize: knobSize, contentWidth: contentWidth)
+            controlDeckItems(encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight, contentWidth: contentWidth)
                 .frame(width: contentWidth, height: itemHeight)
                 .padding(deckInset)
         }
@@ -26,16 +25,16 @@ struct ControlDeckView: View {
         .background(ControlDeckBackground())
     }
 
-    private func controlDeckItems(knobSize: CGFloat, contentWidth: CGFloat) -> some View {
-        let unitWidth = flexibleUnitWidth(knobSize: knobSize, contentWidth: contentWidth)
+    private func controlDeckItems(encoderWidth: CGFloat, encoderRowHeight: CGFloat, contentWidth: CGFloat) -> some View {
+        let unitWidth = flexibleUnitWidth(encoderWidth: encoderWidth, contentWidth: contentWidth)
 
         return HStack(spacing: 10) {
             ForEach(Array(controlOrder.enumerated()), id: \.element.id) { index, item in
                 if index > 0 {
                     DeckDivider()
                 }
-                controlItem(item, knobSize: knobSize)
-                    .frame(width: groupWidth(for: item, unitWidth: unitWidth, knobSize: knobSize))
+                controlItem(item, encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight)
+                    .frame(width: groupWidth(for: item, unitWidth: unitWidth, encoderWidth: encoderWidth))
             }
 
             DeckDivider()
@@ -44,29 +43,25 @@ struct ControlDeckView: View {
     }
 
     @ViewBuilder
-    private func controlItem(_ item: ControlDeckItem, knobSize: CGFloat) -> some View {
+    private func controlItem(_ item: ControlDeckItem, encoderWidth: CGFloat, encoderRowHeight: CGFloat) -> some View {
         switch item {
         case .history:
             historyControls
         case .brush:
-            brushControls(knobSize: knobSize)
+            brushSettingControls(encoderWidth: encoderWidth, encoderRowHeight: encoderRowHeight)
         case .tools:
             toolControls
-        case .pan:
-            PadHoldButton(systemName: "hand.raised", label: "PAN", isPressed: $isPanPressed) { pressed in
-                connection.sendPadAction(pressed ? .panBegan : .panEnded)
-            }
         case .pressure:
             pressureReadout
         }
     }
 
-    private func flexibleUnitWidth(knobSize: CGFloat, contentWidth: CGFloat) -> CGFloat {
+    private func flexibleUnitWidth(encoderWidth: CGFloat, contentWidth: CGFloat) -> CGFloat {
         let spacing: CGFloat = 10
         let dividerWidth: CGFloat = 1
         let readoutWidth: CGFloat = 96
         let optionsWidth: CGFloat = 84
-        let brushWidth = knobSize + spacing + readoutWidth
+        let brushWidth = encoderWidth
         let dividerCount = CGFloat(controlOrder.count)
         let childCount = CGFloat(controlOrder.count + Int(dividerCount) + 1)
         let totalSpacing = max(childCount - 1, 0) * spacing
@@ -74,7 +69,7 @@ struct ControlDeckView: View {
             switch item {
             case .history, .tools:
                 return total + spacing
-            case .brush, .pan, .pressure:
+            case .brush, .pressure:
                 return total
             }
         }
@@ -85,7 +80,7 @@ struct ControlDeckView: View {
                 return total + brushWidth
             case .pressure:
                 return total + readoutWidth
-            case .history, .tools, .pan:
+            case .history, .tools:
                 return total
             }
         }
@@ -94,8 +89,6 @@ struct ControlDeckView: View {
             switch item {
             case .history, .tools:
                 return total + 2
-            case .pan:
-                return total + 1
             case .brush, .pressure:
                 return total
             }
@@ -105,17 +98,15 @@ struct ControlDeckView: View {
         return max((contentWidth - fixedWidth) / flexibleUnits, 1)
     }
 
-    private func groupWidth(for item: ControlDeckItem, unitWidth: CGFloat, knobSize: CGFloat) -> CGFloat {
+    private func groupWidth(for item: ControlDeckItem, unitWidth: CGFloat, encoderWidth: CGFloat) -> CGFloat {
         let spacing: CGFloat = 10
         let readoutWidth: CGFloat = 96
 
         switch item {
         case .history, .tools:
             return unitWidth * 2 + spacing
-        case .pan:
-            return unitWidth
         case .brush:
-            return knobSize + spacing + readoutWidth
+            return encoderWidth
         case .pressure:
             return readoutWidth
         }
@@ -133,19 +124,42 @@ struct ControlDeckView: View {
         }
     }
 
-    private func brushControls(knobSize: CGFloat) -> some View {
-        HStack(spacing: 10) {
-            BrushKnob(size: knobSize) { direction in
-                showBrushStep(direction)
-                connection.sendPadAction(direction < 0 ? .brushSmaller : .brushLarger)
-            }
-
-            RelativeControlPanel(
-                title: "BRUSH",
-                value: brushStepText,
-                footnote: "RELATIVE",
-                direction: brushStepDirection
+    private func brushSettingControls(encoderWidth: CGFloat, encoderRowHeight: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            relativeInputRow(
+                title: "Brush size",
+                width: encoderWidth,
+                height: encoderRowHeight,
+                decrementAction: .brushSmaller,
+                incrementAction: .brushLarger
             )
+
+            relativeInputRow(
+                title: "Opacity",
+                width: encoderWidth,
+                height: encoderRowHeight,
+                decrementAction: .opacityLower,
+                incrementAction: .opacityHigher
+            )
+        }
+    }
+
+    private func relativeInputRow(
+        title: String,
+        width: CGFloat,
+        height: CGFloat,
+        decrementAction: PadAction,
+        incrementAction: PadAction
+    ) -> some View {
+        HorizontalRelativeInputControl(
+            width: width,
+            height: height,
+            stepDistance: 18,
+            title: title,
+            accessibilityLabel: "\(title) encoder",
+            accessibilityHint: "Drag right to increase. Drag left to decrease."
+        ) { event in
+            connection.sendPadAction(event == .decrement ? decrementAction : incrementAction)
         }
     }
 
@@ -204,30 +218,8 @@ struct ControlDeckView: View {
         "\(Int((connection.lastPressure * 100).rounded()))%"
     }
 
-    private var brushStepText: String {
-        switch brushStepDirection {
-        case let direction where direction > 0:
-            return "+STEP"
-        case let direction where direction < 0:
-            return "-STEP"
-        default:
-            return "STEP"
-        }
-    }
-
     private var formattedTilt: String {
         "\(Int(connection.lastTiltDegrees.rounded()))°"
-    }
-
-    private func showBrushStep(_ direction: Int) {
-        brushStepDirection = direction
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(650))
-            if brushStepDirection == direction {
-                brushStepDirection = 0
-            }
-        }
     }
 }
 #endif

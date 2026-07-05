@@ -16,7 +16,7 @@ The server supports both USB and Wi-Fi. Monitor/output mapping is left to the de
 - Apple Pencil input with pressure and tilt.
 - Pen and eraser tool modes.
 - Native Linux multitouch gestures, including two-finger pinch/zoom in apps such as Krita.
-- Pad actions for undo, redo, brush size, and pan.
+- Pad actions for undo, redo, brush size, and opacity.
 - USB and Wi-Fi transport with low-latency TCP settings.
 
 ## Requirements

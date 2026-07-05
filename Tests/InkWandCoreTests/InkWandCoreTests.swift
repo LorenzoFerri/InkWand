@@ -26,7 +26,7 @@ final class InkWandCoreTests: XCTestCase {
     }
 
     func testPadMessageJSONLineRoundTrip() throws {
-        let message = InkMessage.pad(.brushLarger)
+        let message = InkMessage.pad(.opacityHigher)
         let data = try JSONLineCodec.encode(message)
 
         XCTAssertEqual(data.last, 0x0A)
