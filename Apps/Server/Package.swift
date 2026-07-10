@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "InkWandServerApp",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v15),
     ],
     products: [
         .executable(
@@ -24,9 +24,15 @@ let package = Package(
             dependencies: [
                 .product(name: "InkWandCore", package: "InkWandCore"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "SwiftCrossUI", package: "swift-cross-ui", condition: .when(platforms: [.linux])),
+                .product(name: "SwiftCrossUI", package: "swift-cross-ui", condition: .when(platforms: [.linux, .macOS])),
+                .product(name: "DefaultBackend", package: "swift-cross-ui", condition: .when(platforms: [.linux, .macOS])),
                 .product(name: "GtkBackend", package: "swift-cross-ui", condition: .when(platforms: [.linux])),
+                .product(name: "AppKitBackend", package: "swift-cross-ui", condition: .when(platforms: [.macOS])),
             ]
+        ),
+        .testTarget(
+            name: "InkWandServerTests",
+            dependencies: ["InkWandServer"]
         ),
     ]
 )

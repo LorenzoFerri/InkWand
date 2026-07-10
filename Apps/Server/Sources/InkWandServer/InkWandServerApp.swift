@@ -2,15 +2,15 @@ import ArgumentParser
 import Dispatch
 import Foundation
 import InkWandCore
-#if os(Linux) && canImport(SwiftCrossUI) && canImport(GtkBackend)
-import GtkBackend
+#if (os(Linux) || os(macOS)) && canImport(SwiftCrossUI) && canImport(DefaultBackend)
+import DefaultBackend
 import SwiftCrossUI
 #endif
 
 struct ServerCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "InkWandServer",
-        abstract: "Receive Apple Pencil samples from InkWand over USB or Wi-Fi and expose a native Linux uinput pen tablet.",
+        abstract: "Receive Apple Pencil samples from InkWand over USB or Wi-Fi and expose a native desktop tablet.",
         subcommands: [RunCommand.self, FirewallCommand.self, AutostartCommand.self],
         defaultSubcommand: RunCommand.self
     )
@@ -38,7 +38,7 @@ struct RunCommand: ParsableCommand {
     var pair = false
 
     @Option(help: "Display name advertised to iPads.")
-    var serverName = "InkWand"
+    var serverName = InkWandServerRuntime.defaultServerName
 
     mutating func run() throws {
         let runtime = InkWandServerRuntime(
@@ -58,7 +58,7 @@ struct RunCommand: ParsableCommand {
 
         ServerLog.info("InkWandServer is ready. Open InkWand on the iPad when you want to draw.")
         ServerLog.info("Trusted iPads: \(runtime.trustedPeers.count). Config: \(ProductPaths.default.configDirectory.path)")
-        ServerLog.info("Enabled transports: \(enabledTransportDescription). On X11, InkWand will try to map virtual input devices to the full desktop during the first input events.")
+        ServerLog.info("Enabled transports: \(enabledTransportDescription). \(platformInputDetail)")
         let addresses = NetworkInterfaces.localIPv4Addresses()
         if addresses.isEmpty {
             ServerLog.info("No non-loopback IPv4 address detected for manual Wi-Fi connection.")
@@ -83,6 +83,16 @@ struct RunCommand: ParsableCommand {
         case (true, true):
             return "none"
         }
+    }
+
+    private var platformInputDetail: String {
+        #if os(Linux)
+        return "On X11, InkWand will try to map virtual input devices to the full desktop during the first input events."
+        #elseif os(macOS)
+        return "On macOS, allow InkWandServer in Input Monitoring and Accessibility if prompted."
+        #else
+        return ""
+        #endif
     }
 }
 
@@ -182,7 +192,7 @@ struct AutostartStatusCommand: ParsableCommand {
     }
 }
 
-#if os(Linux) && canImport(SwiftCrossUI) && canImport(GtkBackend)
+#if (os(Linux) || os(macOS)) && canImport(SwiftCrossUI) && canImport(DefaultBackend)
 @main
 struct InkWandServerApp: App {
     private static let runtime = InkWandServerRuntime()
@@ -268,9 +278,13 @@ struct InkWandServerApp: App {
                             .font(.system(size: 18))
                         Text("Computer name: \(Self.runtime.currentServerName)")
                         Text("Wi-Fi port: \(Self.runtime.currentPort)")
-                        Button(autostartEnabled ? "Disable launch at startup" : "Launch when system starts") {
-                            setAutostart(enabled: !autostartEnabled)
-                        }
+                        #if os(Linux)
+                            Button(autostartEnabled ? "Disable launch at startup" : "Launch when system starts") {
+                                setAutostart(enabled: !autostartEnabled)
+                            }
+                        #else
+                            Text("Launch at startup is not available on macOS yet.")
+                        #endif
                     }
                 }
                 .padding()
@@ -302,10 +316,12 @@ struct InkWandServerApp: App {
             Divider()
             Button("Open Settings") { openWindow(id: "settings") }
             Divider()
-            Button(autostartEnabled ? "Disable launch at startup" : "Launch when system starts") {
-                setAutostart(enabled: !autostartEnabled)
-            }
-            Divider()
+            #if os(Linux)
+                Button(autostartEnabled ? "Disable launch at startup" : "Launch when system starts") {
+                    setAutostart(enabled: !autostartEnabled)
+                }
+                Divider()
+            #endif
             Button("Quit") {
                 Self.runtime.stop()
                 Foundation.exit(0)

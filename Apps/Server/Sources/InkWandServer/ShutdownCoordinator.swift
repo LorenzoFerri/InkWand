@@ -1,7 +1,10 @@
-#if os(Linux)
 import Dispatch
 import Foundation
+#if os(Linux)
 import Glibc
+#else
+import Darwin
+#endif
 
 final class ShutdownCoordinator: @unchecked Sendable {
     private let queue = DispatchQueue(label: "inkwand.server.shutdown")
@@ -45,4 +48,3 @@ final class ShutdownCoordinator: @unchecked Sendable {
         exit(EXIT_SUCCESS)
     }
 }
-#endif

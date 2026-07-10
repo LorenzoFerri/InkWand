@@ -1,9 +1,12 @@
-#if os(Linux)
 import Dispatch
 import Foundation
 import InkWandCore
 
 final class InkWandServerRuntime: @unchecked Sendable {
+    static var defaultServerName: String {
+        Host.current().localizedName ?? Host.current().name ?? "InkWand"
+    }
+
     enum State: Equatable {
         case stopped
         case starting
@@ -50,7 +53,7 @@ final class InkWandServerRuntime: @unchecked Sendable {
         didSet { notifyChanged() }
     }
 
-    init(port: UInt16 = 24817, serverName: String = "InkWand", verbose: Bool = false, enableUSB: Bool = true, enableWiFi: Bool = true) {
+    init(port: UInt16 = 24817, serverName: String = InkWandServerRuntime.defaultServerName, verbose: Bool = false, enableUSB: Bool = true, enableWiFi: Bool = true) {
         self.port = port
         self.serverName = serverName
         self.verbose = verbose
@@ -96,13 +99,12 @@ final class InkWandServerRuntime: @unchecked Sendable {
             }
             let bindingStore = try PadBindingStore(url: paths.bindingStoreURL)
             let mapper = TabletMapper()
-            let device = try UInputPenDevice(maxX: mapper.maxX, maxY: mapper.maxY, maxPressure: mapper.maxPressure)
-            let touchDevice = try UInputTouchDevice(maxX: mapper.maxX, maxY: mapper.maxY)
-            let padDevice = try UInputPadDevice(bindingMap: try bindingStore.load().validating(allowedKeyCodes: LinuxInput.keyEsc...LinuxInput.keyMicMute))
+            let inputDevices = try Self.makeInputDevices(mapper: mapper, bindingStore: bindingStore, verbose: verbose)
             let sessionCoordinator = TabletSessionCoordinator(
-                device: device,
-                padDevice: padDevice,
-                touchDevice: touchDevice,
+                device: inputDevices.pen,
+                padDevice: inputDevices.pad,
+                touchDevice: inputDevices.touch,
+                inputMapper: inputDevices.mapper,
                 authenticator: sessionAuthenticator,
                 verbose: verbose
             )
@@ -287,6 +289,11 @@ final class InkWandServerRuntime: @unchecked Sendable {
 
             while self?.isRuntimeRunning == true {
                 guard let coordinator else { return }
+                if coordinator.hasActiveTabletSession {
+                    Thread.sleep(forTimeInterval: 0.25)
+                    continue
+                }
+
                 let client = TabletClient(host: "127.0.0.1", port: port, verbose: false)
 
                 do {
@@ -314,6 +321,30 @@ final class InkWandServerRuntime: @unchecked Sendable {
         lock.withLock { isRunning }
     }
 
+    private static func makeInputDevices(mapper: TabletMapper, bindingStore: PadBindingStore, verbose: Bool) throws -> InputDeviceSet {
+        #if os(Linux)
+        return InputDeviceSet(
+            pen: try UInputPenDevice(maxX: mapper.maxX, maxY: mapper.maxY, maxPressure: mapper.maxPressure),
+            touch: try UInputTouchDevice(maxX: mapper.maxX, maxY: mapper.maxY),
+            pad: try UInputPadDevice(bindingMap: try bindingStore.load().validating(allowedKeyCodes: LinuxInput.keyEsc...LinuxInput.keyMicMute)),
+            mapper: XInputDeviceMapper(verbose: verbose)
+        )
+        #elseif os(macOS)
+        _ = bindingStore
+        MacPrivacyPermissions.requestInputPermissions(verbose: verbose)
+        ServerLog.info("Using macOS CoreGraphics tablet-point input backend.")
+        let pen = MacTabletEventPenDevice(maxX: mapper.maxX, maxY: mapper.maxY, maxPressure: mapper.maxPressure)
+        return InputDeviceSet(
+            pen: MacPenEventPacer(target: pen),
+            touch: MacTouchDevice(verbose: verbose),
+            pad: MacPadDevice(),
+            mapper: MacInputDeviceMapper()
+        )
+        #else
+        throw ValidationFailure("InkWandServer does not support virtual input devices on this platform.")
+        #endif
+    }
+
     private func notifyChanged() {
         DispatchQueue.main.async { [onChange] in
             onChange?()
@@ -324,6 +355,9 @@ final class InkWandServerRuntime: @unchecked Sendable {
         let text = String(describing: error)
         if text.contains("uinput") || text.contains("/dev/uinput") {
             return "InkWand cannot access /dev/uinput. Run the one-time input permission setup, then reopen the app."
+        }
+        if text.contains("CoreHID") || text.contains("HID") {
+            return "InkWand could not create the macOS virtual tablet. Check Input Monitoring and Accessibility permissions, then reopen the app."
         }
         return text
     }
@@ -336,4 +370,3 @@ private struct ValidationFailure: Error, CustomStringConvertible {
         self.description = description
     }
 }
-#endif

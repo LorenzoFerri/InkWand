@@ -1,22 +1,22 @@
 # InkWand
 
-Use an iPad with Apple Pencil as a native Linux graphics tablet.
+Use an iPad with Apple Pencil as a desktop graphics tablet.
 
 ![InkWand running on iPad Pro](demo.gif)
 
 InkWand has two parts:
 
 - `Apps/iPad`: the iPad app, built with `xtool`.
-- `Apps/Server`: the Linux tray/server app intended for AppImage distribution.
+- `Apps/Server`: the desktop tray/server app. Linux is intended for AppImage distribution; macOS is supported on macOS 15 and newer.
 - `Packages/InkWandCore`: shared protocol, mapping, pairing, settings, and tests.
 
-The server exposes virtual pen, touch, and pad devices through `/dev/uinput`. Wi-Fi discovery supports multiple iPads and multiple computers on the same network, and sessions must authenticate through a trusted pairing record before input is accepted.
+On Linux, the server exposes virtual pen, touch, and pad devices through `/dev/uinput`. On macOS 15+, it creates a virtual pen device with CoreHID and sends pad shortcuts with CoreGraphics. Wi-Fi discovery supports multiple iPads and multiple computers on the same network, and sessions must authenticate through a trusted pairing record before input is accepted.
 
 ## Features
 
 - Apple Pencil input with pressure and tilt.
 - Pen and eraser tool modes.
-- Native Linux multitouch gestures, including two-finger pinch/zoom in apps such as Krita.
+- Native Linux multitouch gestures, including two-finger pinch/zoom in apps such as Krita. macOS touch gesture injection is not implemented yet.
 - Pad actions for undo, redo, brush size, opacity, and pan.
 - Secure pairing model with one-time codes and persistent trusted peers.
 - Global pad rebinding stored in user config.
@@ -25,9 +25,9 @@ The server exposes virtual pen, touch, and pad devices through `/dev/uinput`. Wi
 ## Requirements
 
 - Swift 6 for development builds.
-- Linux with `/dev/uinput`.
+- Linux with `/dev/uinput`, or macOS 15+.
 - `iproxy` for USB mode.
-- `avahi-publish-service` for Wi-Fi discovery.
+- `avahi-publish-service` for Linux Wi-Fi discovery. macOS uses Bonjour through Foundation.
 - `xtool` for installing the iPad app during development.
 
 On Arch-like systems:
@@ -36,6 +36,14 @@ On Arch-like systems:
 sudo pacman -S swift libimobiledevice usbmuxd avahi
 sudo modprobe uinput
 ```
+
+On macOS:
+
+```bash
+brew install swift libimobiledevice
+```
+
+macOS asks for input permissions the first time the server starts. Allow InkWandServer in Privacy & Security when prompted. If drawing or pad shortcuts do not work, check System Settings > Privacy & Security > Accessibility and Input Monitoring, then reopen the server.
 
 InkWand is designed to run as a user-launched AppImage. A distro may still need a one-time udev rule or equivalent local setup to allow the user to access `/dev/uinput`; the app itself does not install a systemd daemon.
 
@@ -55,7 +63,7 @@ cd Apps/Server
 swift bundler bundle InkWandServer
 ```
 
-If Swift Bundler does not emit an AppImage directly in your environment, use its bundle output as the AppDir input for AppImage tooling.
+If Swift Bundler does not emit an AppImage directly in your Linux environment, use its bundle output as the AppDir input for AppImage tooling.
 
 ## Run
 
@@ -107,7 +115,7 @@ sudo Apps/Server/.build/release/InkWandServer firewall uninstall
 
 ## Launch At Startup
 
-The AppImage product should implement “Launch when system starts” by writing:
+On Linux, the AppImage product should implement “Launch when system starts” by writing:
 
 ```text
 ~/.config/autostart/inkwand.desktop
@@ -128,6 +136,10 @@ Connection modes:
 - `Wi-Fi`: discover and connect to a trusted server over the local network.
 
 ## Troubleshooting
+
+On macOS, if the iPad connects but drawing or pad shortcuts do not affect apps, open System Settings > Privacy & Security and allow InkWandServer under Accessibility and Input Monitoring, then reopen the server. Development runs launched with `swift run` may appear as Terminal, your shell, or InkWandServer depending on how macOS attributes the process.
+
+macOS touch gestures are not supported in this first macOS backend. Pen input and pad shortcuts are the supported macOS v1 input paths.
 
 If pen input works but multitouch gestures do not show up in Krita:
 

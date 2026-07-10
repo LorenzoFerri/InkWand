@@ -108,7 +108,10 @@ final class PencilSurfaceView: UIView, UIPencilInteractionDelegate {
         let activeArea = activeArea
         guard activeArea.width > 0, activeArea.height > 0 else { return }
 
-        for touch in touches where touch.type == .pencil {
+        var samples: [PencilSample] = []
+        samples.reserveCapacity(touches.count)
+
+        for (index, touch) in touches.enumerated() where touch.type == .pencil {
             lastPencilEventDate = Date()
             let point = touch.location(in: self)
             let isInsideActiveArea = activeArea.contains(point)
@@ -136,7 +139,9 @@ final class PencilSurfaceView: UIView, UIPencilInteractionDelegate {
             )
             let localPoint = CGPoint(x: clampedPoint.x - activeArea.minX, y: clampedPoint.y - activeArea.minY)
 
-            updateTrail(at: localPoint, phase: phase, pressure: pressure)
+            if index == touches.count - 1 || phase != .moved {
+                updateTrail(at: localPoint, phase: phase, pressure: pressure)
+            }
 
             let sample = PencilSample(
                 phase: phase,
@@ -149,19 +154,19 @@ final class PencilSurfaceView: UIView, UIPencilInteractionDelegate {
                 azimuth: Double(azimuth)
             )
             lastPencilContact = LastPencilContact(sample: sample)
-
-            connection?.send(sample)
+            samples.append(sample)
 
             if phase == .ended || phase == .cancelled {
                 closeActivePencilStroke()
             }
         }
+
+        connection?.send(samples)
     }
 
     private func sendDirectTouches(_ touches: Set<UITouch>, phase: TouchPhase, event: UIEvent?) {
         let activeArea = activeArea
         guard activeArea.width > 0, activeArea.height > 0 else { return }
-        releaseStalePencilStrokeIfNeeded(before: touches, event: event)
 
         var frame: [TouchSample] = []
         for touch in touches where touch.type == .direct {
@@ -238,29 +243,6 @@ final class PencilSurfaceView: UIView, UIPencilInteractionDelegate {
             height: Double(normalizedContactSize),
             timestamp: Self.nanoseconds(from: touch.timestamp)
         )
-    }
-
-    private func releaseStalePencilStrokeIfNeeded(before touches: Set<UITouch>, event: UIEvent?) {
-        guard hasActiveStroke, touches.contains(where: { $0.type == .direct }) else { return }
-        let hasActivePencilTouch = (event?.allTouches ?? []).contains { touch in
-            touch.type == .pencil && touch.phase != .ended && touch.phase != .cancelled
-        }
-        guard !hasActivePencilTouch, let lastPencilContact else { return }
-
-        let timestamp = touches.map(\.timestamp).max() ?? 0
-        connection?.send(
-            PencilSample(
-                phase: .cancelled,
-                tool: lastPencilContact.tool,
-                x: lastPencilContact.x,
-                y: lastPencilContact.y,
-                pressure: 0,
-                timestamp: Self.nanoseconds(from: timestamp),
-                altitude: lastPencilContact.altitude,
-                azimuth: lastPencilContact.azimuth
-            )
-        )
-        closeActivePencilStroke()
     }
 
     private func closeActivePencilStroke() {

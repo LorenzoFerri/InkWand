@@ -1,6 +1,9 @@
-#if os(Linux)
 import Foundation
+#if os(Linux)
 import Glibc
+#else
+import Darwin
+#endif
 import InkWandCore
 
 final class TabletClient: @unchecked Sendable {
@@ -33,7 +36,11 @@ final class TabletClient: @unchecked Sendable {
             return
         }
 
+        #if os(Linux)
         fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+        #else
+        fd = socket(AF_INET, SOCK_STREAM, 0)
+        #endif
         guard fd >= 0 else {
             throw ServerError.posix("socket", errno)
         }
@@ -49,7 +56,11 @@ final class TabletClient: @unchecked Sendable {
 
         let result = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                #if os(Linux)
                 Glibc.connect(fd, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #else
+                Darwin.connect(fd, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #endif
             }
         }
 
@@ -67,7 +78,11 @@ final class TabletClient: @unchecked Sendable {
         var buffer = [UInt8](repeating: 0, count: 4096)
 
         while true {
+            #if os(Linux)
             let readCount = Glibc.recv(fd, &buffer, buffer.count, 0)
+            #else
+            let readCount = Darwin.recv(fd, &buffer, buffer.count, 0)
+            #endif
             if readCount == 0 {
                 throw ServerError.connectionClosed
             }
@@ -117,7 +132,11 @@ final class TabletClient: @unchecked Sendable {
             guard let baseAddress = buffer.baseAddress else { return }
             var sent = 0
             while sent < data.count {
+                #if os(Linux)
                 let written = Glibc.send(fd, baseAddress.advanced(by: sent), data.count - sent, 0)
+                #else
+                let written = Darwin.send(fd, baseAddress.advanced(by: sent), data.count - sent, 0)
+                #endif
                 guard written > 0 else {
                     if errno == EINTR {
                         continue
@@ -131,7 +150,11 @@ final class TabletClient: @unchecked Sendable {
 
     func close() {
         if fd >= 0 {
+            #if os(Linux)
             _ = Glibc.close(fd)
+            #else
+            _ = Darwin.close(fd)
+            #endif
             fd = -1
         }
     }
@@ -152,4 +175,3 @@ private extension InkMessage {
         }
     }
 }
-#endif

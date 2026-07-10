@@ -122,7 +122,13 @@ public struct AuthResponse: Codable, Equatable, Sendable {
     public var serverNonce: String?
     public var error: String?
 
-    public init(accepted: Bool, serverID: String, serverPublicKey: String? = nil, serverNonce: String? = nil, error: String?) {
+    public init(
+        accepted: Bool,
+        serverID: String,
+        serverPublicKey: String? = nil,
+        serverNonce: String? = nil,
+        error: String?
+    ) {
         self.accepted = accepted
         self.serverID = serverID
         self.serverPublicKey = serverPublicKey

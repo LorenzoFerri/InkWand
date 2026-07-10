@@ -1,7 +1,10 @@
-#if os(Linux)
 import Dispatch
 import Foundation
+#if os(Linux)
 import Glibc
+#else
+import Darwin
+#endif
 
 final class WiFiTabletListener: @unchecked Sendable {
     private let port: UInt16
@@ -16,7 +19,11 @@ final class WiFiTabletListener: @unchecked Sendable {
     }
 
     func start() throws {
+        #if os(Linux)
         listenFD = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+        #else
+        listenFD = socket(AF_INET, SOCK_STREAM, 0)
+        #endif
         guard listenFD >= 0 else {
             throw ServerError.posix("wifi socket", errno)
         }
@@ -31,7 +38,11 @@ final class WiFiTabletListener: @unchecked Sendable {
 
         let bindResult = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                #if os(Linux)
                 Glibc.bind(listenFD, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #else
+                Darwin.bind(listenFD, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #endif
             }
         }
         guard bindResult == 0 else {
@@ -43,7 +54,12 @@ final class WiFiTabletListener: @unchecked Sendable {
             throw ServerError.posix("wifi bind", code)
         }
 
-        guard Glibc.listen(listenFD, 4) == 0 else {
+        #if os(Linux)
+        let listenResult = Glibc.listen(listenFD, 4)
+        #else
+        let listenResult = Darwin.listen(listenFD, 4)
+        #endif
+        guard listenResult == 0 else {
             let code = errno
             stop()
             throw ServerError.posix("wifi listen", code)
@@ -58,7 +74,11 @@ final class WiFiTabletListener: @unchecked Sendable {
 
     func stop() {
         if listenFD >= 0 {
+            #if os(Linux)
             _ = Glibc.close(listenFD)
+            #else
+            _ = Darwin.close(listenFD)
+            #endif
             listenFD = -1
         }
     }
@@ -69,7 +89,11 @@ final class WiFiTabletListener: @unchecked Sendable {
             var length = socklen_t(MemoryLayout<sockaddr_in>.size)
             let acceptedFD = withUnsafeMutablePointer(to: &address) { pointer in
                 pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                    #if os(Linux)
                     Glibc.accept(listenFD, sockaddrPointer, &length)
+                    #else
+                    Darwin.accept(listenFD, sockaddrPointer, &length)
+                    #endif
                 }
             }
 
@@ -99,4 +123,3 @@ final class WiFiTabletListener: @unchecked Sendable {
         }
     }
 }
-#endif

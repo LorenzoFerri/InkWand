@@ -65,7 +65,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
     private static let modeDefaultsKey = "InkWand.ConnectionMode"
     private static let selectedServerDefaultsKey = "InkWand.SelectedServerID"
 
-    private let queue = DispatchQueue(label: "inkwand.tablet.connection")
+    private let queue = DispatchQueue(label: "inkwand.tablet.connection", qos: .userInteractive)
     private let trustStore = TabletTrustStore()
     private var usbListener: NWListener?
     private var wifiBrowser: NWBrowser?
@@ -117,7 +117,15 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
     }
 
     func send(_ sample: PencilSample) {
-        publishStylusTelemetry(from: sample)
+        send([sample], publishTelemetry: true)
+    }
+
+    func send(_ samples: [PencilSample], publishTelemetry: Bool = true) {
+        guard !samples.isEmpty else { return }
+
+        if publishTelemetry, let sample = samples.last {
+            publishStylusTelemetry(from: sample)
+        }
 
         queue.async {
             guard self.connection != nil else { return }
@@ -125,7 +133,9 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
                 self.didPublishConnected = true
                 self.publishState(.connected, transport: activeTransport.rawValue, detail: "")
             }
-            self.sendMessage(.sample(sample))
+            for sample in samples {
+                self.sendMessage(.sample(sample))
+            }
         }
     }
 
@@ -724,14 +734,17 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
 
         let ipBytes = ipBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
-        if let discoveredServer, let selectedServerID, selectedServerID != discoveredServer.serverID {
+        let host = String(decoding: ipBytes, as: UTF8.self)
+        if let discoveredServer, let selectedServerID,
+           !selectedServerID.hasPrefix("bonjour:"),
+           selectedServerID != discoveredServer.serverID {
             return
         }
         if let discoveredServer, selectedServerID == nil, trustStore.server(id: discoveredServer.serverID) == nil {
             return
         }
 
-        connectWiFi(host: String(decoding: ipBytes, as: UTF8.self), port: discoveredPort, server: discoveredServer)
+        connectWiFi(host: host, port: discoveredPort, server: discoveredServer)
     }
 
     private func rememberDiscoveredServer(_ server: ServerAdvertisement) {
@@ -921,7 +934,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
             }
             connection.send(content: outgoing, completion: .contentProcessed { [weak self, weak connection] error in
                 guard let self else { return }
-
                 if let error {
                     print("InkWand send failed: \(error)")
                     if let connection {

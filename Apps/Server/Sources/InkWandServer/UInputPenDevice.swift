@@ -238,6 +238,10 @@ final class UInputPenDevice {
         isTouching || activeTool != nil
     }
 
+    var isTouchActive: Bool {
+        isTouching
+    }
+
     private static func timestampValue(_ timestamp: UInt64) -> Int32 {
         Int32(timestamp % (UInt64(Int32.max) + 1))
     }

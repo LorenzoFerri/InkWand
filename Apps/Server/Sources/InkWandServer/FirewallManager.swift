@@ -1,4 +1,3 @@
-#if os(Linux)
 import Foundation
 
 enum FirewallAction: String {
@@ -8,6 +7,15 @@ enum FirewallAction: String {
 
 enum FirewallManager {
     static func apply(_ action: FirewallAction, port: UInt16) throws {
+        #if os(macOS)
+        switch action {
+        case .install:
+            print("macOS manages incoming network access through System Settings > Network > Firewall.")
+            print("Allow InkWandServer when macOS prompts for local network or incoming connection access.")
+        case .uninstall:
+            print("No InkWand firewall rule was installed by this command on macOS.")
+        }
+        #else
         guard Privilege.requireRoot(commandDescription: "Firewall changes") else {
             return
         }
@@ -26,6 +34,7 @@ enum FirewallManager {
         print("Open these ports manually for Wi-Fi mode:")
         print("  TCP \(port)")
         print("  UDP \(port)")
+        #endif
     }
 
     private static func applyUFW(_ action: FirewallAction, port: UInt16) throws {
@@ -94,4 +103,3 @@ enum FirewallManager {
         }
     }
 }
-#endif

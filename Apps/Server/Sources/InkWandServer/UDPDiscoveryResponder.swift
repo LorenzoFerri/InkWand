@@ -1,7 +1,10 @@
-#if os(Linux)
 import Dispatch
 import Foundation
+#if os(Linux)
 import Glibc
+#else
+import Darwin
+#endif
 import InkWandCore
 
 final class UDPDiscoveryResponder: @unchecked Sendable {
@@ -11,13 +14,20 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
     private let verbose: Bool
     private var fd: Int32 = -1
 
-    init(advertisementProvider: @escaping @Sendable () -> ServerAdvertisement, verbose: Bool) {
+    init(
+        advertisementProvider: @escaping @Sendable () -> ServerAdvertisement,
+        verbose: Bool
+    ) {
         self.advertisementProvider = advertisementProvider
         self.verbose = verbose
     }
 
     func start() {
+        #if os(Linux)
         fd = socket(AF_INET, Int32(SOCK_DGRAM.rawValue), 0)
+        #else
+        fd = socket(AF_INET, SOCK_DGRAM, 0)
+        #endif
         guard fd >= 0 else {
             print("UDP discovery unavailable: \(String(cString: strerror(errno)))")
             return
@@ -33,7 +43,11 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
 
         let bindResult = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                #if os(Linux)
                 Glibc.bind(fd, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #else
+                Darwin.bind(fd, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                #endif
             }
         }
 
@@ -54,7 +68,11 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
 
     func stop() {
         if fd >= 0 {
+            #if os(Linux)
             _ = Glibc.close(fd)
+            #else
+            _ = Darwin.close(fd)
+            #endif
             fd = -1
         }
     }
@@ -67,7 +85,11 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
             var senderLength = socklen_t(MemoryLayout<sockaddr_in>.size)
             let count = withUnsafeMutablePointer(to: &sender) { pointer in
                 pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                    #if os(Linux)
                     Glibc.recvfrom(fd, &buffer, buffer.count, 0, sockaddrPointer, &senderLength)
+                    #else
+                    Darwin.recvfrom(fd, &buffer, buffer.count, 0, sockaddrPointer, &senderLength)
+                    #endif
                 }
             }
 
@@ -98,7 +120,11 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
             var replyAddress = sender
             _ = withUnsafePointer(to: &replyAddress) { pointer in
                 pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                    #if os(Linux)
                     Glibc.sendto(fd, response, response.count, 0, sockaddrPointer, senderLength)
+                    #else
+                    Darwin.sendto(fd, response, response.count, 0, sockaddrPointer, senderLength)
+                    #endif
                 }
             }
 
@@ -111,4 +137,3 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
         }
     }
 }
-#endif

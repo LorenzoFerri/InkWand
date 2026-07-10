@@ -1,6 +1,9 @@
-#if os(Linux)
 import Foundation
+#if os(Linux)
 import Glibc
+#else
+import Darwin
+#endif
 
 enum Privilege {
     static var isRoot: Bool {
@@ -18,4 +21,3 @@ enum Privilege {
         return false
     }
 }
-#endif

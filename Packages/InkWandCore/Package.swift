@@ -6,7 +6,7 @@ let package = Package(
     name: "InkWandCore",
     platforms: [
         .iOS("17.0"),
-        .macOS(.v14),
+        .macOS(.v15),
     ],
     products: [
         .library(

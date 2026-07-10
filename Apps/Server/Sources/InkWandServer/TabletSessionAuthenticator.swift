@@ -1,4 +1,3 @@
-#if os(Linux)
 import Foundation
 import InkWandCore
 
@@ -39,7 +38,7 @@ final class TabletSessionAuthenticator: @unchecked Sendable {
 
         case let .pairingRequest(request):
             do {
-                let response: PairingResponse
+                var response: PairingResponse
                 if request.code.isEmpty {
                     let pending = try pairingManager.requestApproval(request)
                     onPairingRequestsChanged?()
@@ -73,4 +72,3 @@ final class TabletSessionAuthenticator: @unchecked Sendable {
         }
     }
 }
-#endif

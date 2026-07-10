@@ -192,6 +192,17 @@ final class ProductizationTests: XCTestCase {
         XCTAssertEqual(manager.state(expectedAppImagePath: "/tmp/InkWand.AppImage"), .disabled)
     }
 
+    func testDefaultProductPathsUsePlatformConventions() {
+        let paths = ProductPaths.default
+        #if os(macOS)
+        XCTAssertTrue(paths.configDirectory.path.contains("Library/Application Support/InkWand"))
+        XCTAssertEqual(paths.configDirectory, paths.dataDirectory)
+        #else
+        XCTAssertTrue(paths.configDirectory.path.hasSuffix(".config/inkwand") || paths.configDirectory.path.contains("/inkwand"))
+        XCTAssertTrue(paths.dataDirectory.path.hasSuffix(".local/share/inkwand") || paths.dataDirectory.path.contains("/inkwand"))
+        #endif
+    }
+
     private func temporaryDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

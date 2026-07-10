@@ -1,4 +1,3 @@
-#if os(Linux)
 import Foundation
 import InkWandCore
 
@@ -8,6 +7,7 @@ final class DesktopPairingNotifier: @unchecked Sendable {
         approve: @escaping @Sendable () -> Void,
         reject: @escaping @Sendable () -> Void
     ) {
+        #if os(Linux)
         DispatchQueue.global(qos: .utility).async {
             let process = Process()
             let stdout = Pipe()
@@ -44,6 +44,8 @@ final class DesktopPairingNotifier: @unchecked Sendable {
                 ServerLog.info("Desktop pairing notification unavailable: \(error)")
             }
         }
+        #else
+        ServerLog.info("\(request.clientName) wants to connect. Open InkWand Server to accept or reject the request.")
+        #endif
     }
 }
-#endif

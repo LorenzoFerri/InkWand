@@ -1,11 +1,18 @@
 format_version = 2
 
 [apps.InkWandServer]
-identifier = "dev.inkwand.InkWand"
+identifier = "app.inkwand.InkWandServer"
 product = "InkWandServer"
 version = "0.1.0"
-icon = "../iPad/Assets/AppIcon.png"
+icon = "Assets/AppIcon.png"
 category = "public.app-category.utilities"
 
 [apps.InkWandServer.plist]
+CFBundleIdentifier = "app.inkwand.InkWandServer"
+CFBundleName = "InkWand Server"
 LSApplicationCategoryType = "public.app-category.utilities"
+LSMinimumSystemVersion = "15.0"
+NSHumanReadableCopyright = "Copyright © 2026 InkWand"
+NSInputMonitoringUsageDescription = "InkWand posts tablet input events so your iPad can act as a pressure-sensitive drawing tablet."
+NSLocalNetworkUsageDescription = "InkWand uses the local network so iPads can discover and connect to this Mac."
+NSBonjourServices = ["_inkwand._tcp"]
