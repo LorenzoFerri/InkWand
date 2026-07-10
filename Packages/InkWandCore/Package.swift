@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "InkWandCore",
     platforms: [
-        .iOS("26.0"),
+        .iOS("17.0"),
         .macOS(.v14),
     ],
     products: [

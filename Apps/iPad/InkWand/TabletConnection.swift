@@ -1,9 +1,9 @@
-#if canImport(UIKit)
+import Combine
+import Darwin
 import Foundation
+import InkWandCore
 import Network
 import UIKit
-import InkWandCore
-import Darwin
 
 enum TabletConnectionMode: String, CaseIterable, Identifiable {
     case auto = "Auto"
@@ -965,5 +965,3 @@ private extension InkMessage {
         }
     }
 }
-
-#endif

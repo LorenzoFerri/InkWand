@@ -1,0 +1,405 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		100000000000000000000101 /* InkWandApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000201 /* InkWandApp.swift */; };
+		100000000000000000000102 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000202 /* ContentView.swift */; };
+		100000000000000000000103 /* ControlDeckComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000203 /* ControlDeckComponents.swift */; };
+		100000000000000000000104 /* ControlDeckItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000204 /* ControlDeckItem.swift */; };
+		100000000000000000000105 /* ControlDeckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000205 /* ControlDeckView.swift */; };
+		100000000000000000000106 /* ControlsPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000206 /* ControlsPosition.swift */; };
+		100000000000000000000107 /* HorizontalRelativeInputControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000207 /* HorizontalRelativeInputControl.swift */; };
+		100000000000000000000108 /* PencilCaptureRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000208 /* PencilCaptureRepresentable.swift */; };
+		100000000000000000000109 /* PencilSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000209 /* PencilSurfaceView.swift */; };
+		10000000000000000000010A /* TabletConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020A /* TabletConnection.swift */; };
+		10000000000000000000010B /* TabletTrustStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020B /* TabletTrustStore.swift */; };
+		10000000000000000000010C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020C /* Assets.xcassets */; };
+		10000000000000000000010D /* InkWandCore in Frameworks */ = {isa = PBXBuildFile; productRef = 100000000000000000000901 /* InkWandCore */; };
+		10000000000000000000010E /* GlassCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020E /* GlassCompat.swift */; };
+		A3DB5126300085B500CC7F3A /* Icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A3DB5125300085B500CC7F3A /* Icon.icon */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		100000000000000000000001 /* InkWand.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkWand.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000201 /* InkWandApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InkWandApp.swift; sourceTree = "<group>"; };
+		100000000000000000000202 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		100000000000000000000203 /* ControlDeckComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlDeckComponents.swift; sourceTree = "<group>"; };
+		100000000000000000000204 /* ControlDeckItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlDeckItem.swift; sourceTree = "<group>"; };
+		100000000000000000000205 /* ControlDeckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlDeckView.swift; sourceTree = "<group>"; };
+		100000000000000000000206 /* ControlsPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsPosition.swift; sourceTree = "<group>"; };
+		100000000000000000000207 /* HorizontalRelativeInputControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontalRelativeInputControl.swift; sourceTree = "<group>"; };
+		100000000000000000000208 /* PencilCaptureRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCaptureRepresentable.swift; sourceTree = "<group>"; };
+		100000000000000000000209 /* PencilSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilSurfaceView.swift; sourceTree = "<group>"; };
+		10000000000000000000020A /* TabletConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabletConnection.swift; sourceTree = "<group>"; };
+		10000000000000000000020B /* TabletTrustStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabletTrustStore.swift; sourceTree = "<group>"; };
+		10000000000000000000020C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		10000000000000000000020D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		10000000000000000000020E /* GlassCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCompat.swift; sourceTree = "<group>"; };
+		A3DB5125300085B500CC7F3A /* Icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = Icon.icon; path = /Users/lorenzoferri/Projects/InkWand/Assets/Icon.icon; sourceTree = "<absolute>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		100000000000000000000301 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10000000000000000000010D /* InkWandCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100000000000000000000401 = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000402 /* InkWand */,
+				100000000000000000000403 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000402 /* InkWand */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000020D /* Info.plist */,
+				10000000000000000000020C /* Assets.xcassets */,
+				A3DB5125300085B500CC7F3A /* Icon.icon */,
+				100000000000000000000202 /* ContentView.swift */,
+				100000000000000000000203 /* ControlDeckComponents.swift */,
+				100000000000000000000204 /* ControlDeckItem.swift */,
+				100000000000000000000205 /* ControlDeckView.swift */,
+				100000000000000000000206 /* ControlsPosition.swift */,
+				10000000000000000000020E /* GlassCompat.swift */,
+				100000000000000000000207 /* HorizontalRelativeInputControl.swift */,
+				100000000000000000000201 /* InkWandApp.swift */,
+				100000000000000000000208 /* PencilCaptureRepresentable.swift */,
+				100000000000000000000209 /* PencilSurfaceView.swift */,
+				10000000000000000000020A /* TabletConnection.swift */,
+				10000000000000000000020B /* TabletTrustStore.swift */,
+			);
+			path = InkWand;
+			sourceTree = "<group>";
+		};
+		100000000000000000000403 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000001 /* InkWand.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		100000000000000000000501 /* InkWand */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000701 /* Build configuration list for PBXNativeTarget "InkWand" */;
+			buildPhases = (
+				100000000000000000000601 /* Sources */,
+				100000000000000000000301 /* Frameworks */,
+				100000000000000000000602 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = InkWand;
+			packageProductDependencies = (
+				100000000000000000000901 /* InkWandCore */,
+			);
+			productName = InkWand;
+			productReference = 100000000000000000000001 /* InkWand.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		100000000000000000000801 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					100000000000000000000501 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = 100000000000000000000702 /* Build configuration list for PBXProject "InkWand" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 100000000000000000000401;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				100000000000000000000900 /* XCLocalSwiftPackageReference "../../Packages/InkWandCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 100000000000000000000403 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				100000000000000000000501 /* InkWand */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		100000000000000000000602 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10000000000000000000010C /* Assets.xcassets in Resources */,
+				A3DB5126300085B500CC7F3A /* Icon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		100000000000000000000601 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000102 /* ContentView.swift in Sources */,
+				100000000000000000000103 /* ControlDeckComponents.swift in Sources */,
+				100000000000000000000104 /* ControlDeckItem.swift in Sources */,
+				100000000000000000000105 /* ControlDeckView.swift in Sources */,
+				100000000000000000000106 /* ControlsPosition.swift in Sources */,
+				10000000000000000000010E /* GlassCompat.swift in Sources */,
+				100000000000000000000107 /* HorizontalRelativeInputControl.swift in Sources */,
+				100000000000000000000101 /* InkWandApp.swift in Sources */,
+				100000000000000000000108 /* PencilCaptureRepresentable.swift in Sources */,
+				100000000000000000000109 /* PencilSurfaceView.swift in Sources */,
+				10000000000000000000010A /* TabletConnection.swift in Sources */,
+				10000000000000000000010B /* TabletTrustStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		100000000000000000000711 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		100000000000000000000712 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		100000000000000000000721 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = FF3FABQ543;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InkWand/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = InkWand;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.inkwand.Inkwand;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		100000000000000000000722 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = FF3FABQ543;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InkWand/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = InkWand;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.inkwand.Inkwand;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		100000000000000000000701 /* Build configuration list for PBXNativeTarget "InkWand" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				100000000000000000000721 /* Debug */,
+				100000000000000000000722 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		100000000000000000000702 /* Build configuration list for PBXProject "InkWand" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				100000000000000000000711 /* Debug */,
+				100000000000000000000712 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		100000000000000000000900 /* XCLocalSwiftPackageReference "../../Packages/InkWandCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Packages/InkWandCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		100000000000000000000901 /* InkWandCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 100000000000000000000900 /* XCLocalSwiftPackageReference "../../Packages/InkWandCore" */;
+			productName = InkWandCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 100000000000000000000801 /* Project object */;
+}

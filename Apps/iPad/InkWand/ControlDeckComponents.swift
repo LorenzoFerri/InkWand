@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import InkWandCore
 import SwiftUI
 
@@ -18,10 +17,7 @@ struct PadButton: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.92))
                 .frame(minWidth: 44, maxWidth: .infinity, minHeight: 64, maxHeight: .infinity)
-                .glassEffect(
-                    .regular.interactive(),
-                    in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
-                )
+                .inkWandGlass(cornerRadius: ControlDeckMetrics.innerRadius, interactive: true)
         }
         .buttonStyle(.plain)
     }
@@ -51,10 +47,10 @@ struct ToolPadButton: View {
             }
             .foregroundStyle(isActive ? .white : .white.opacity(0.72))
             .frame(minWidth: 44, maxWidth: .infinity, minHeight: 64, maxHeight: .infinity)
-            .glassEffect(
-                isActive
-                    ? .regular.tint(.cyan.opacity(0.42)).interactive() : .regular.interactive(),
-                in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
+            .inkWandGlass(
+                cornerRadius: ControlDeckMetrics.innerRadius,
+                tint: isActive ? .cyan.opacity(0.42) : nil,
+                interactive: true
             )
             .accessibilityLabel(label)
         }
@@ -136,10 +132,7 @@ struct ReadoutPanel: View {
         .frame(width: 76, alignment: .leading)
         .frame(minHeight: 64, maxHeight: .infinity)
         .padding(.horizontal, 10)
-        .glassEffect(
-            .regular.tint(.black.opacity(0.4)),
-            in: .rect(cornerRadius: ControlDeckMetrics.innerRadius)
-        )
+        .inkWandGlass(cornerRadius: ControlDeckMetrics.innerRadius, tint: .black.opacity(0.4))
     }
 }
 
@@ -365,4 +358,58 @@ struct DeckDivider: View {
     }
 }
 
-#endif
+#Preview("Pad buttons") {
+    HStack(spacing: 12) {
+        PadButton(systemName: "arrow.uturn.backward") {}
+        ToolPadButton(systemName: "pencil.tip", label: "PEN", isActive: true) {}
+        ToolPadButton(systemName: "eraser", label: "ERASE", isActive: false) {}
+        StatusOptionsModule(color: .green, stateText: "Connected", transport: "Wi-Fi")
+    }
+    .frame(width: 380, height: 84)
+    .padding()
+    .background(Color.black)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Readout panel") {
+    ReadoutPanel(
+        title: "PRESSURE",
+        value: "74%",
+        footnote: "TILT 18°",
+        progress: 0.74
+    )
+    .padding()
+    .background(Color.black)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Options row") {
+    VStack(alignment: .leading, spacing: 14) {
+        ControlOptionsRow(
+            title: "Connection",
+            subtitle: "Transport mode",
+            systemName: "antenna.radiowaves.left.and.right"
+        ) {
+            Picker("Connection", selection: .constant(TabletConnectionMode.auto)) {
+                ForEach(TabletConnectionMode.allCases) { mode in
+                    Label(mode.rawValue, systemImage: mode.symbolName)
+                        .tag(mode)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+        }
+
+        ControlOptionsRow(
+            title: "Controls",
+            subtitle: "Visible",
+            systemName: "rectangle.topthird.inset.filled"
+        ) {
+            Toggle("Show Controls", isOn: .constant(true))
+                .labelsHidden()
+        }
+    }
+    .padding()
+    .frame(width: 420)
+    .preferredColorScheme(.dark)
+}

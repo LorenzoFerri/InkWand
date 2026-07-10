@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 enum ControlDeckItem: String, CaseIterable, Identifiable {
     case history
     case brush
@@ -7,5 +6,3 @@ enum ControlDeckItem: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 }
-
-#endif

@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import SwiftUI
 
 enum RelativeInputEvent {
@@ -79,9 +78,10 @@ struct HorizontalRelativeInputControl: View {
     private func wheelBase(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(.clear)
-            .glassEffect(
-                isDragging ? .regular.tint(.cyan.opacity(0.12)).interactive() : .regular.interactive(),
-                in: .rect(cornerRadius: cornerRadius)
+            .inkWandGlass(
+                cornerRadius: cornerRadius,
+                tint: isDragging ? .cyan.opacity(0.12) : nil,
+                interactive: true
             )
             .animation(.snappy(duration: 0.12), value: isDragging)
     }
@@ -165,4 +165,21 @@ struct HorizontalRelativeInputControl: View {
     }
 }
 
-#endif
+#Preview("Relative input") {
+    VStack(spacing: 12) {
+        HorizontalRelativeInputControl(
+            width: 320,
+            height: 34,
+            title: "Brush size"
+        ) { _ in }
+
+        HorizontalRelativeInputControl(
+            width: 320,
+            height: 34,
+            title: "Opacity"
+        ) { _ in }
+    }
+    .padding()
+    .background(Color.black)
+    .preferredColorScheme(.dark)
+}

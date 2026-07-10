@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import SwiftUI
 
 enum ControlsPosition: String, CaseIterable, Identifiable {
@@ -25,5 +24,3 @@ enum ControlsPosition: String, CaseIterable, Identifiable {
         }
     }
 }
-
-#endif

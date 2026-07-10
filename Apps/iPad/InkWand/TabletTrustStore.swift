@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import Foundation
 import InkWandCore
 
@@ -66,4 +65,3 @@ final class TabletTrustStore: @unchecked Sendable {
         defaults.removeObject(forKey: Self.peersKey)
     }
 }
-#endif

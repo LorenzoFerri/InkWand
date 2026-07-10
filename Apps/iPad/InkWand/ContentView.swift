@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import InkWandCore
 import SwiftUI
 
@@ -42,6 +41,7 @@ struct ContentView: View {
                     .padding(24)
             }
         }
+        .preferredColorScheme(.dark)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .ignoresSafeArea(.container, edges: .bottom)
@@ -128,30 +128,30 @@ private struct GuidedConnectionView: View {
     private var title: String {
         switch connection.state {
         case .waiting:
-            return "Open InkWand on your computer"
+            "Open InkWand on your computer"
         case .searching:
-            return "Choose your computer"
+            "Choose your computer"
         case .connecting:
-            return "Connecting..."
+            "Connecting..."
         case .pairing:
-            return "Approve on your computer"
+            "Approve on your computer"
         case .authenticating:
-            return "Checking this computer..."
+            "Checking this computer..."
         case .connected:
-            return "Ready to draw"
+            "Ready to draw"
         case .failed:
-            return "Needs attention"
+            "Needs attention"
         }
     }
 
     private var subtitle: String {
         if connection.state == .pairing {
-            return "InkWand Server is showing a request. Accept it on your computer to authorize this iPad."
+            "InkWand Server is showing a request. Accept it on your computer to authorize this iPad."
+        } else if connection.discoveredServers.isEmpty {
+            "Make sure your iPad and computer are on the same Wi-Fi network, then keep InkWand Server open."
+        } else {
+            "Tap the computer you want to use with this iPad."
         }
-        if connection.discoveredServers.isEmpty {
-            return "Make sure your iPad and computer are on the same Wi-Fi network, then keep InkWand Server open."
-        }
-        return "Tap the computer you want to use with this iPad."
     }
 
     private var serverList: some View {
@@ -195,10 +195,13 @@ private struct GuidedConnectionView: View {
 
     private func serverStatus(_ server: ServerAdvertisement) -> String {
         if connection.isTrusted(server) {
-            return "Already authorized"
+            "Already authorized"
+        } else {
+            "Tap to request access"
         }
-        return "Tap to request access"
     }
 }
 
-#endif
+#Preview {
+    ContentView()
+}

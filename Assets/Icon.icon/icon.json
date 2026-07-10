@@ -1,0 +1,123 @@
+{
+  "fill" : {
+    "solid" : "display-p3:0.38426,0.60815,0.64768,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : {
+            "linear-gradient" : [
+              "extended-gray:1.00000,1.00000",
+              "display-p3:0.70982,0.70982,0.70982,1.00000"
+            ],
+            "orientation" : {
+              "start" : {
+                "x" : 0.5,
+                "y" : 1
+              },
+              "stop" : {
+                "x" : 0.5,
+                "y" : 0.3
+              }
+            }
+          },
+          "glass" : true,
+          "image-name" : "04_Pen.svg",
+          "name" : "04_Pen",
+          "position" : {
+            "scale" : 1.5,
+            "translation-in-points" : [
+              88.66198661671058,
+              -29.62734514541239
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "none"
+            }
+          ],
+          "glass" : false,
+          "image-name" : "03_IW_Logo.svg",
+          "name" : "03_IW_Logo",
+          "position" : {
+            "scale" : 2,
+            "translation-in-points" : [
+              58.76350556152602,
+              -61.190044897079474
+            ]
+          }
+        },
+        {
+          "blend-mode" : "normal",
+          "fill" : "none",
+          "glass" : true,
+          "image-name" : "02_iPad.svg",
+          "name" : "02_iPad",
+          "position" : {
+            "scale" : 2,
+            "translation-in-points" : [
+              38.8984375,
+              -45.275711234563346
+            ]
+          }
+        },
+        {
+          "blend-mode" : "normal",
+          "fill" : {
+            "linear-gradient" : [
+              "extended-gray:0.00000,1.00000",
+              "display-p3:0.20000,0.20000,0.20000,1.00000"
+            ],
+            "orientation" : {
+              "start" : {
+                "x" : 0.5,
+                "y" : 1
+              },
+              "stop" : {
+                "x" : 0.5,
+                "y" : 1.1165875358467516
+              }
+            }
+          },
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "02_iPad.svg",
+          "name" : "02_iPad",
+          "position" : {
+            "scale" : 2,
+            "translation-in-points" : [
+              38.8984375,
+              -45.275711234563346
+            ]
+          }
+        }
+      ],
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          -12.285709124207301,
+          9.926767580810406
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import SwiftUI
 import InkWandCore
 
@@ -33,12 +32,12 @@ struct ControlDeckView: View {
             )
             .padding(deckInset)
             .frame(width: deckWidth, alignment: .trailing)
-            .glassEffect(.regular, in: .rect(cornerRadius: ControlDeckMetrics.outerRadius))
+            .inkWandGlass(cornerRadius: ControlDeckMetrics.outerRadius)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .animation(.snappy(duration: 0.22), value: showsControls)
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 82, maxHeight: .infinity)
+        .frame(minHeight: 82, maxHeight: 150)
         .onAppear {
             revealsControls = showsControls
         }
@@ -195,7 +194,7 @@ struct ControlDeckView: View {
                 transport: connection.activeTransportLabel
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: ControlDeckMetrics.innerRadius))
+            .inkWandGlass(cornerRadius: ControlDeckMetrics.innerRadius, interactive: true)
         }
         .buttonStyle(.plain)
         .frame(width: ControlDeckMetrics.optionsButtonWidth)
@@ -233,4 +232,25 @@ struct ControlDeckView: View {
     }
 }
 
-#endif
+#Preview("Control deck") {
+    ControlDeckView(
+        connection: TabletConnection(),
+        showsControls: .constant(true),
+        controlsPosition: .constant(.top)
+    )
+    .padding()
+    .background(Color.black)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Collapsed control deck") {
+    ControlDeckView(
+        connection: TabletConnection(),
+        showsControls: .constant(false),
+        controlsPosition: .constant(.bottom)
+    )
+    .frame(width: 420, height: 104)
+    .padding()
+    .background(Color.black)
+    .preferredColorScheme(.dark)
+}

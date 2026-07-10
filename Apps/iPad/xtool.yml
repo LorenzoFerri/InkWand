@@ -1,5 +1,0 @@
-version: 1
-bundleID: com.example.InkWand
-product: InkWand
-infoPath: Info.plist
-iconPath: Assets/AppIcon.png
