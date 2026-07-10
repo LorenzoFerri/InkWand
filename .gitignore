@@ -2,7 +2,8 @@
 
 # Swift Package Manager
 /.build/
-/Packages/
+**/.build/
+**/.swiftpm/
 /.swiftpm/configuration/registries.json
 /.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 
@@ -14,6 +15,8 @@ xcuserdata/
 
 # xtool build/install output
 /xtool/
+**/xtool/
+/.tools/
 
 # Local credentials and automation state
 .netrc

@@ -1,0 +1,11 @@
+format_version = 2
+
+[apps.InkWandServer]
+identifier = "dev.inkwand.InkWand"
+product = "InkWandServer"
+version = "0.1.0"
+icon = "../iPad/Assets/AppIcon.png"
+category = "public.app-category.utilities"
+
+[apps.InkWandServer.plist]
+LSApplicationCategoryType = "public.app-category.utilities"
