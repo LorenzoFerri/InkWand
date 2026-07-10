@@ -19,7 +19,6 @@ protocol TouchInputDevice: AnyObject {
     var shouldReleasePenBeforeTouchInput: Bool { get }
     var shouldProcessTouchInput: Bool { get }
     func emitFrame(_ samples: [TouchSample]) throws
-    func emitLegacyGesture(_ gesture: CanvasGesture) throws
     func release(timestamp: UInt64) throws
     func destroy()
 }

@@ -69,20 +69,52 @@
 				10000000000000000000020D /* Info.plist */,
 				10000000000000000000020C /* Assets.xcassets */,
 				A3DB5125300085B500CC7F3A /* Icon.icon */,
+				100000000000000000000404 /* App */,
+				100000000000000000000405 /* Canvas */,
+				100000000000000000000406 /* Controls */,
+				100000000000000000000407 /* Connection */,
+			);
+			path = InkWand;
+			sourceTree = "<group>";
+		};
+		100000000000000000000404 /* App */ = {
+			isa = PBXGroup;
+			children = (
 				100000000000000000000202 /* ContentView.swift */,
+				100000000000000000000201 /* InkWandApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		100000000000000000000405 /* Canvas */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000208 /* PencilCaptureRepresentable.swift */,
+				100000000000000000000209 /* PencilSurfaceView.swift */,
+			);
+			path = Canvas;
+			sourceTree = "<group>";
+		};
+		100000000000000000000406 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
 				100000000000000000000203 /* ControlDeckComponents.swift */,
 				100000000000000000000204 /* ControlDeckItem.swift */,
 				100000000000000000000205 /* ControlDeckView.swift */,
 				100000000000000000000206 /* ControlsPosition.swift */,
 				10000000000000000000020E /* GlassCompat.swift */,
 				100000000000000000000207 /* HorizontalRelativeInputControl.swift */,
-				100000000000000000000201 /* InkWandApp.swift */,
-				100000000000000000000208 /* PencilCaptureRepresentable.swift */,
-				100000000000000000000209 /* PencilSurfaceView.swift */,
+			);
+			path = Controls;
+			sourceTree = "<group>";
+		};
+		100000000000000000000407 /* Connection */ = {
+			isa = PBXGroup;
+			children = (
 				10000000000000000000020A /* TabletConnection.swift */,
 				10000000000000000000020B /* TabletTrustStore.swift */,
 			);
-			path = InkWand;
+			path = Connection;
 			sourceTree = "<group>";
 		};
 		100000000000000000000403 /* Products */ = {

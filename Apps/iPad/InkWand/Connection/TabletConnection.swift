@@ -282,20 +282,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
     }
 
-    func sendGesture(_ gesture: CanvasGesture) {
-        queue.async {
-            guard self.connection != nil else { return }
-            self.sendMessage(.gesture(gesture))
-        }
-    }
-
-    func sendTouch(_ touch: TouchSample) {
-        queue.async {
-            guard self.connection != nil else { return }
-            self.sendMessage(.touch(touch))
-        }
-    }
-
     func sendTouchFrame(_ touches: [TouchSample]) {
         guard !touches.isEmpty else { return }
 
@@ -686,7 +672,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         address.sin_port = port.bigEndian
         address.sin_addr = in_addr(s_addr: INADDR_BROADCAST)
 
-        let payload = Array("INKWAND_DISCOVER_V1\n".utf8)
+        let payload = Array("\(InkWandDiscoveryProtocol.request)\n".utf8)
         _ = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
                 Darwin.sendto(udpDiscoveryFD, payload, payload.count, 0, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
@@ -713,16 +699,13 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         let parts = response.split(separator: " ")
         let discoveredPort: UInt16
         let discoveredServer: ServerAdvertisement?
-        if parts.count >= 2, parts[0] == "INKWAND_SERVER_V2",
+        if parts.count >= 2, parts[0] == Substring(InkWandDiscoveryProtocol.response),
            let payloadStart = response.firstIndex(of: "{"),
            let data = String(response[payloadStart...]).data(using: .utf8),
            let advertisement = try? JSONDecoder().decode(ServerAdvertisement.self, from: data) {
             discoveredPort = advertisement.port
             discoveredServer = advertisement
             rememberDiscoveredServer(advertisement)
-        } else if parts.count == 2, parts[0] == "INKWAND_SERVER_V1", let port = UInt16(parts[1]) {
-            discoveredPort = port
-            discoveredServer = nil
         } else {
             return
         }
@@ -911,7 +894,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         sendMessage(
             .hello(
                 TabletHello(
-                    protocolVersion: 1,
+                    protocolVersion: inkWandProtocolVersion,
                     canvasWidth: Double(canvasSize.width),
                     canvasHeight: Double(canvasSize.height),
                     deviceName: deviceName
@@ -963,17 +946,6 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
             if let detail {
                 self.detail = detail
             }
-        }
-    }
-}
-
-private extension InkMessage {
-    var shouldEncryptOnWire: Bool {
-        switch self {
-        case .authRequest, .authResponse, .pairingRequest, .pairingResponse, .encrypted:
-            return false
-        case .hello, .sample, .tool, .pad, .gesture, .touch, .touchFrame, .cancel:
-            return true
         }
     }
 }

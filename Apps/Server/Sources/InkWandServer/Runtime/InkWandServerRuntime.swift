@@ -356,9 +356,6 @@ final class InkWandServerRuntime: @unchecked Sendable {
         if text.contains("uinput") || text.contains("/dev/uinput") {
             return "InkWand cannot access /dev/uinput. Run the one-time input permission setup, then reopen the app."
         }
-        if text.contains("CoreHID") || text.contains("HID") {
-            return "InkWand could not create the macOS virtual tablet. Check Input Monitoring and Accessibility permissions, then reopen the app."
-        }
         return text
     }
 }

@@ -3,8 +3,6 @@ import Foundation
 import Security
 #endif
 
-public let inkWandProtocolVersion = 2
-
 public struct ServerAdvertisement: Codable, Equatable, Sendable, Identifiable {
     public var id: String { serverID }
     public var serverID: String

@@ -8,8 +8,6 @@ import Darwin
 import InkWandCore
 
 final class UDPDiscoveryResponder: @unchecked Sendable {
-    private static let request = "INKWAND_DISCOVER_V1"
-
     private let advertisementProvider: @Sendable () -> ServerAdvertisement
     private let verbose: Bool
     private var fd: Int32 = -1
@@ -106,17 +104,16 @@ final class UDPDiscoveryResponder: @unchecked Sendable {
 
             let request = String(decoding: buffer.prefix(Int(count)), as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            guard request == Self.request else {
+            guard request == InkWandDiscoveryProtocol.request else {
                 continue
             }
 
             let advertisement = advertisementProvider()
-            let response: [UInt8]
-            if let data = try? JSONEncoder().encode(advertisement), let body = String(data: data, encoding: .utf8) {
-                response = Array("INKWAND_SERVER_V2 \(body)\n".utf8)
-            } else {
-                response = Array("INKWAND_SERVER_V1 \(advertisement.port)\n".utf8)
+            guard let data = try? JSONEncoder().encode(advertisement),
+                  let body = String(data: data, encoding: .utf8) else {
+                continue
             }
+            let response = Array("\(InkWandDiscoveryProtocol.response) \(body)\n".utf8)
             var replyAddress = sender
             _ = withUnsafePointer(to: &replyAddress) { pointer in
                 pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in

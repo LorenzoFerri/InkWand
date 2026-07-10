@@ -24,13 +24,6 @@ public enum PencilTool: String, Codable, Sendable {
     case eraser
 }
 
-public enum CanvasGesturePhase: String, Codable, Sendable {
-    case began
-    case moved
-    case ended
-    case cancelled
-}
-
 public enum TouchPhase: String, Codable, Sendable {
     case began
     case moved
@@ -60,82 +53,6 @@ public struct TabletHello: Codable, Equatable, Sendable {
         self.canvasWidth = canvasWidth
         self.canvasHeight = canvasHeight
         self.deviceName = deviceName
-    }
-}
-
-public struct CanvasGesture: Codable, Equatable, Sendable {
-    public var phase: CanvasGesturePhase
-    public var x: Double
-    public var y: Double
-    public var translationX: Double
-    public var translationY: Double
-    public var scale: Double
-    public var rotation: Double
-    public var firstTouchX: Double
-    public var firstTouchY: Double
-    public var secondTouchX: Double
-    public var secondTouchY: Double
-    public var timestamp: UInt64
-
-    public init(
-        phase: CanvasGesturePhase,
-        x: Double,
-        y: Double,
-        translationX: Double,
-        translationY: Double,
-        scale: Double,
-        rotation: Double,
-        firstTouchX: Double,
-        firstTouchY: Double,
-        secondTouchX: Double,
-        secondTouchY: Double,
-        timestamp: UInt64
-    ) {
-        self.phase = phase
-        self.x = x
-        self.y = y
-        self.translationX = translationX
-        self.translationY = translationY
-        self.scale = scale
-        self.rotation = rotation
-        self.firstTouchX = firstTouchX
-        self.firstTouchY = firstTouchY
-        self.secondTouchX = secondTouchX
-        self.secondTouchY = secondTouchY
-        self.timestamp = timestamp
-    }
-}
-
-extension CanvasGesture {
-    private enum CodingKeys: String, CodingKey {
-        case phase
-        case x
-        case y
-        case translationX
-        case translationY
-        case scale
-        case rotation
-        case firstTouchX
-        case firstTouchY
-        case secondTouchX
-        case secondTouchY
-        case timestamp
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        phase = try container.decode(CanvasGesturePhase.self, forKey: .phase)
-        x = try container.decode(Double.self, forKey: .x)
-        y = try container.decode(Double.self, forKey: .y)
-        translationX = try container.decode(Double.self, forKey: .translationX)
-        translationY = try container.decode(Double.self, forKey: .translationY)
-        scale = try container.decode(Double.self, forKey: .scale)
-        rotation = try container.decode(Double.self, forKey: .rotation)
-        firstTouchX = try container.decodeIfPresent(Double.self, forKey: .firstTouchX) ?? x
-        firstTouchY = try container.decodeIfPresent(Double.self, forKey: .firstTouchY) ?? y
-        secondTouchX = try container.decodeIfPresent(Double.self, forKey: .secondTouchX) ?? x
-        secondTouchY = try container.decodeIfPresent(Double.self, forKey: .secondTouchY) ?? y
-        timestamp = try container.decode(UInt64.self, forKey: .timestamp)
     }
 }
 
@@ -216,7 +133,7 @@ extension PencilSample {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.phase = try container.decode(PencilPhase.self, forKey: .phase)
-        self.tool = try container.decodeIfPresent(PencilTool.self, forKey: .tool) ?? .pen
+        self.tool = try container.decode(PencilTool.self, forKey: .tool)
         self.x = try container.decode(Double.self, forKey: .x)
         self.y = try container.decode(Double.self, forKey: .y)
         self.pressure = try container.decode(Double.self, forKey: .pressure)
@@ -236,8 +153,6 @@ public enum InkMessage: Equatable, Sendable {
     case sample(PencilSample)
     case tool(PencilTool)
     case pad(PadAction)
-    case gesture(CanvasGesture)
-    case touch(TouchSample)
     case touchFrame([TouchSample])
     case cancel
 }
@@ -258,8 +173,6 @@ extension InkMessage: Codable {
         case sample
         case tool
         case pad
-        case gesture
-        case touch
         case touchFrame
         case cancel
     }
@@ -285,10 +198,6 @@ extension InkMessage: Codable {
             self = .tool(try container.decode(PencilTool.self, forKey: .payload))
         case .pad:
             self = .pad(try container.decode(PadAction.self, forKey: .payload))
-        case .gesture:
-            self = .gesture(try container.decode(CanvasGesture.self, forKey: .payload))
-        case .touch:
-            self = .touch(try container.decode(TouchSample.self, forKey: .payload))
         case .touchFrame:
             self = .touchFrame(try container.decode([TouchSample].self, forKey: .payload))
         case .cancel:
@@ -326,17 +235,22 @@ extension InkMessage: Codable {
         case let .pad(action):
             try container.encode(MessageType.pad, forKey: .type)
             try container.encode(action, forKey: .payload)
-        case let .gesture(gesture):
-            try container.encode(MessageType.gesture, forKey: .type)
-            try container.encode(gesture, forKey: .payload)
-        case let .touch(touch):
-            try container.encode(MessageType.touch, forKey: .type)
-            try container.encode(touch, forKey: .payload)
         case let .touchFrame(touches):
             try container.encode(MessageType.touchFrame, forKey: .type)
             try container.encode(touches, forKey: .payload)
         case .cancel:
             try container.encode(MessageType.cancel, forKey: .type)
+        }
+    }
+}
+
+public extension InkMessage {
+    var shouldEncryptOnWire: Bool {
+        switch self {
+        case .authRequest, .authResponse, .pairingRequest, .pairingResponse, .encrypted:
+            return false
+        case .hello, .sample, .tool, .pad, .touchFrame, .cancel:
+            return true
         }
     }
 }

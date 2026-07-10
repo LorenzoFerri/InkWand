@@ -164,14 +164,3 @@ final class TabletClient: @unchecked Sendable {
         _ = setsockopt(fd, Int32(IPPROTO_TCP), TCP_NODELAY, &enabled, socklen_t(MemoryLayout<Int32>.size))
     }
 }
-
-private extension InkMessage {
-    var shouldEncryptOnWire: Bool {
-        switch self {
-        case .authRequest, .authResponse, .pairingRequest, .pairingResponse, .encrypted:
-            return false
-        case .hello, .sample, .tool, .pad, .gesture, .touch, .touchFrame, .cancel:
-            return true
-        }
-    }
-}

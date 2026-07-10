@@ -151,6 +151,9 @@ final class TabletSessionCoordinator: @unchecked Sendable {
             }
 
         case let .hello(hello):
+            guard hello.protocolVersion == inkWandProtocolVersion else {
+                throw ServerError.unsupportedProtocolVersion(hello.protocolVersion)
+            }
             didReceiveHello = true
             ServerLog.info("Connected to \(hello.deviceName) via \(transport) (\(Int(hello.canvasWidth))x\(Int(hello.canvasHeight))).")
 
@@ -252,47 +255,6 @@ final class TabletSessionCoordinator: @unchecked Sendable {
                 ServerLog.info("pad \(action.rawValue) transport=\(activeTransport)")
             }
 
-        case let .gesture(gesture):
-            guard didReceiveHello else {
-                if verbose {
-                    ServerLog.info("ignoring \(transport) gesture before hello")
-                }
-                return
-            }
-            guard touchDevice.shouldProcessTouchInput else {
-                inputCounters.ignoredTouches += 1
-                if gesture.phase != .moved {
-                    logInputEvent("ignored gesture \(gesture.phase.rawValue) transport=\(activeTransport)")
-                }
-                return
-            }
-
-            if gesture.phase == .began || gesture.phase == .moved {
-                if touchDevice.shouldReleasePenBeforeTouchInput {
-                    try releasePenBeforeTouch(timestamp: gesture.timestamp, reason: "gesture \(gesture.phase.rawValue)")
-                }
-            }
-            inputMapper.mapTouchIfNeeded()
-            try touchDevice.emitLegacyGesture(gesture)
-            inputCounters.gestures += 1
-            if gesture.phase != .moved {
-                logInputEvent("gesture \(gesture.phase.rawValue) transport=\(activeTransport)")
-            }
-
-            if verbose {
-                ServerLog.info("gesture \(gesture.phase.rawValue) x=\(gesture.x) y=\(gesture.y) tx=\(gesture.translationX) ty=\(gesture.translationY) scale=\(gesture.scale) rotation=\(gesture.rotation) transport=\(activeTransport)")
-            }
-
-        case let .touch(touch):
-            guard didReceiveHello else {
-                if verbose {
-                    ServerLog.info("ignoring \(transport) touch before hello")
-                }
-                return
-            }
-
-            try handleTouchFrame([touch])
-
         case let .touchFrame(touches):
             guard didReceiveHello else {
                 if verbose {
@@ -390,7 +352,7 @@ final class TabletSessionCoordinator: @unchecked Sendable {
     private func logSessionSummary() {
         guard !verbose, inputCounters.hasInput else { return }
         ServerLog.info(
-            "session input summary samples=\(inputCounters.samples) touches=\(inputCounters.touches) ignoredTouches=\(inputCounters.ignoredTouches) gestures=\(inputCounters.gestures) pads=\(inputCounters.pads) tools=\(inputCounters.tools) cancels=\(inputCounters.cancels)"
+            "session input summary samples=\(inputCounters.samples) touches=\(inputCounters.touches) ignoredTouches=\(inputCounters.ignoredTouches) pads=\(inputCounters.pads) tools=\(inputCounters.tools) cancels=\(inputCounters.cancels)"
         )
         sampleTiming.logSummary(transport: activeTransport)
     }
@@ -400,14 +362,13 @@ final class TabletSessionCoordinator: @unchecked Sendable {
 private struct InputCounters {
     var samples = 0
     var touches = 0
-    var gestures = 0
     var pads = 0
     var tools = 0
     var cancels = 0
     var ignoredTouches = 0
 
     var hasInput: Bool {
-        samples + touches + gestures + pads + tools + cancels + ignoredTouches > 0
+        samples + touches + pads + tools + cancels + ignoredTouches > 0
     }
 }
 

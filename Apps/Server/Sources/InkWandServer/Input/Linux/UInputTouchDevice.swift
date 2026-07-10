@@ -13,7 +13,6 @@ final class UInputTouchDevice {
     private var isDestroyed = false
     private var touches = Array<TrackedTouch?>(repeating: nil, count: 5)
     private var nextTrackingID: Int32 = 1
-    private let legacyTouchIDs: (UInt64, UInt64) = (UInt64.max - 1, UInt64.max)
 
     init(
         maxX: Int32,
@@ -75,23 +74,6 @@ final class UInputTouchDevice {
             guard let slot = existingSlot(for: sample.id) else { return }
             releasedSlots[slot] = sample.timestamp
             touches[slot] = nil
-        }
-    }
-
-    func emitLegacyGesture(_ gesture: CanvasGesture) throws {
-        switch gesture.phase {
-        case .began, .moved:
-            let phase: TouchPhase = gesture.phase == .began ? .began : .moved
-            try emitFrame([
-                TouchSample(id: legacyTouchIDs.0, phase: phase, x: gesture.firstTouchX, y: gesture.firstTouchY, pressure: 1, width: Self.defaultTouchSize, height: Self.defaultTouchSize, timestamp: gesture.timestamp),
-                TouchSample(id: legacyTouchIDs.1, phase: phase, x: gesture.secondTouchX, y: gesture.secondTouchY, pressure: 1, width: Self.defaultTouchSize, height: Self.defaultTouchSize, timestamp: gesture.timestamp),
-            ])
-        case .ended, .cancelled:
-            let phase: TouchPhase = gesture.phase == .cancelled ? .cancelled : .ended
-            try emitFrame([
-                TouchSample(id: legacyTouchIDs.0, phase: phase, x: gesture.firstTouchX, y: gesture.firstTouchY, pressure: 0, width: 0, height: 0, timestamp: gesture.timestamp),
-                TouchSample(id: legacyTouchIDs.1, phase: phase, x: gesture.secondTouchX, y: gesture.secondTouchY, pressure: 0, width: 0, height: 0, timestamp: gesture.timestamp),
-            ])
         }
     }
 

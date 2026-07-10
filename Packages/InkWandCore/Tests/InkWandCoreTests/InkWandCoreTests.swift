@@ -10,11 +10,10 @@ final class InkWandCoreTests: XCTestCase {
         XCTAssertEqual(try JSONLineCodec.decodeLine(data), message)
     }
 
-    func testPencilSampleDefaultsToPenWhenToolIsMissing() throws {
+    func testPencilSampleRequiresTool() throws {
         let line = #"{"payload":{"phase":"moved","pressure":0.5,"timestamp":42,"x":0.25,"y":0.75},"type":"sample"}"#
-        let message = try JSONLineCodec.decodeLine(line)
 
-        XCTAssertEqual(message, .sample(PencilSample(phase: .moved, tool: .pen, x: 0.25, y: 0.75, pressure: 0.5, timestamp: 42)))
+        XCTAssertThrowsError(try JSONLineCodec.decodeLine(line))
     }
 
     func testToolMessageJSONLineRoundTrip() throws {
@@ -33,40 +32,13 @@ final class InkWandCoreTests: XCTestCase {
         XCTAssertEqual(try JSONLineCodec.decodeLine(data), message)
     }
 
-    func testGestureMessageJSONLineRoundTrip() throws {
-        let message = InkMessage.gesture(
-            CanvasGesture(
-                phase: .moved,
-                x: 0.4,
-                y: 0.6,
-                translationX: 0.01,
-                translationY: -0.02,
-                scale: 1.03,
-                rotation: 0.05,
-                firstTouchX: 0.35,
-                firstTouchY: 0.55,
-                secondTouchX: 0.45,
-                secondTouchY: 0.65,
-                timestamp: 99
-            )
-        )
-        let data = try JSONLineCodec.encode(message)
-
-        XCTAssertEqual(data.last, 0x0A)
-        XCTAssertEqual(try JSONLineCodec.decodeLine(data), message)
-    }
-
-    func testTouchMessageJSONLineRoundTrip() throws {
-        let message = InkMessage.touch(
-            TouchSample(
-                id: 7,
-                phase: .moved,
-                x: 0.2,
-                y: 0.8,
-                pressure: 0.75,
-                width: 0.03,
-                height: 0.02,
-                timestamp: 123
+    func testHelloMessageJSONLineRoundTrip() throws {
+        let message = InkMessage.hello(
+            TabletHello(
+                protocolVersion: inkWandProtocolVersion,
+                canvasWidth: 1024,
+                canvasHeight: 768,
+                deviceName: "iPad"
             )
         )
         let data = try JSONLineCodec.encode(message)
@@ -104,9 +76,9 @@ final class InkWandCoreTests: XCTestCase {
         XCTAssertEqual(try JSONLineCodec.decodeLine(data), message)
     }
 
-    func testExistingMessageTypesDecodeAfterGestureAddition() throws {
+    func testSupportedMessageTypesDecode() throws {
         XCTAssertEqual(
-            try JSONLineCodec.decodeLine(#"{"payload":{"phase":"moved","pressure":0.5,"timestamp":42,"x":0.25,"y":0.75},"type":"sample"}"#),
+            try JSONLineCodec.decodeLine(#"{"payload":{"phase":"moved","pressure":0.5,"timestamp":42,"tool":"pen","x":0.25,"y":0.75},"type":"sample"}"#),
             .sample(PencilSample(phase: .moved, tool: .pen, x: 0.25, y: 0.75, pressure: 0.5, timestamp: 42))
         )
         XCTAssertEqual(try JSONLineCodec.decodeLine(#"{"payload":"eraser","type":"tool"}"#), .tool(.eraser))
@@ -114,11 +86,11 @@ final class InkWandCoreTests: XCTestCase {
         XCTAssertEqual(try JSONLineCodec.decodeLine(#"{"type":"cancel"}"#), .cancel)
     }
 
-    func testTouchMessageDecodesAfterGestureCompatibility() throws {
-        let line = #"{"payload":{"height":0.02,"id":5,"phase":"began","pressure":1,"timestamp":55,"width":0.02,"x":0.1,"y":0.9},"type":"touch"}"#
-        let message = try JSONLineCodec.decodeLine(line)
-
-        XCTAssertEqual(message, .touch(TouchSample(id: 5, phase: .began, x: 0.1, y: 0.9, pressure: 1, width: 0.02, height: 0.02, timestamp: 55)))
+    func testWireEncryptionPolicy() {
+        XCTAssertFalse(InkMessage.authRequest(AuthRequest(serverID: "server", clientID: "client", clientName: "iPad", trustToken: "token")).shouldEncryptOnWire)
+        XCTAssertFalse(InkMessage.encrypted(EncryptedMessage(nonce: "n", ciphertext: "c", tag: "t")).shouldEncryptOnWire)
+        XCTAssertTrue(InkMessage.hello(TabletHello(protocolVersion: inkWandProtocolVersion, canvasWidth: 1, canvasHeight: 1, deviceName: "iPad")).shouldEncryptOnWire)
+        XCTAssertTrue(InkMessage.touchFrame([]).shouldEncryptOnWire)
     }
 
     func testTabletMapperUsesNativeAbsoluteSpace() {
