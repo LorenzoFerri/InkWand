@@ -2,16 +2,25 @@ import Foundation
 
 final class ServicePublisher {
     private let process: Process?
+    #if os(macOS)
     private let service: NetService?
     private let delegate: NetServiceLogger?
+    #endif
     private let verbose: Bool
 
+    #if os(macOS)
     private init(process: Process?, service: NetService? = nil, delegate: NetServiceLogger? = nil, verbose: Bool) {
         self.process = process
         self.service = service
         self.delegate = delegate
         self.verbose = verbose
     }
+    #else
+    private init(process: Process?, verbose: Bool) {
+        self.process = process
+        self.verbose = verbose
+    }
+    #endif
 
     static func startBestEffort(name: String, port: UInt16, verbose: Bool) -> ServicePublisher {
         #if os(macOS)
@@ -56,12 +65,14 @@ final class ServicePublisher {
     }
 
     func stop() {
+        #if os(macOS)
         if let service {
             if verbose {
                 print("stopping Bonjour publisher")
             }
             service.stop()
         }
+        #endif
         guard let process, process.isRunning else { return }
         if verbose {
             print("stopping Bonjour publisher")

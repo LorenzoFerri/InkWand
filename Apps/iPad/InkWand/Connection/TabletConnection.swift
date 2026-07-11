@@ -83,6 +83,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
     private var pendingAuthHandshake: SecureHandshake?
     private var pendingPairingHandshake: SecureHandshake?
     private var secureSession: SecureSession?
+    private var isPreflightComplete = false
     private var receiveBuffer = Data()
     private var isPersistingSelectedServerWithoutRestart = false
     private var isWiFiConnecting = false
@@ -128,7 +129,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         }
 
         queue.async {
-            guard self.connection != nil else { return }
+            guard self.connection != nil, self.isPreflightComplete else { return }
             if let activeTransport = self.activeTransport, !self.didPublishConnected {
                 self.didPublishConnected = true
                 self.publishState(.connected, transport: activeTransport.rawValue, detail: "")
@@ -260,6 +261,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         tool = nextTool
 
         queue.async {
+            guard self.isPreflightComplete else { return }
             self.sendMessage(.tool(nextTool))
         }
     }
@@ -272,12 +274,14 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
 
     func sendPadAction(_ action: PadAction) {
         queue.async {
+            guard self.isPreflightComplete else { return }
             self.sendMessage(.pad(action))
         }
     }
 
     func cancelInputState() {
         queue.async {
+            guard self.isPreflightComplete else { return }
             self.sendMessage(.cancel)
         }
     }
@@ -286,7 +290,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         guard !touches.isEmpty else { return }
 
         queue.async {
-            guard self.connection != nil else { return }
+            guard self.connection != nil, self.isPreflightComplete else { return }
             self.sendMessage(.touchFrame(touches))
         }
     }
@@ -300,6 +304,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
             self.isCancellingTimedOutConnection = false
             self.activeTransport = nil
             self.didPublishConnected = false
+            self.isPreflightComplete = false
             self.isWiFiConnecting = false
             self.pendingWiFiEndpoint = nil
             self.pendingWiFiServer = nil
@@ -534,6 +539,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         connection = newConnection
         activeTransport = transport
         didPublishConnected = false
+        isPreflightComplete = false
         startConnectionTimeout(for: newConnection, transport: transport)
 
         newConnection.stateUpdateHandler = { [weak self, weak newConnection] state in
@@ -556,12 +562,13 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
                 self.pendingWiFiServer = nil
                 self.startReceiveLoop(on: newConnection)
                 let sentAuthentication = self.sendAuthenticationIfNeeded()
-                self.sendHello()
                 if sentAuthentication {
                     self.publishState(.authenticating, transport: transport.rawValue, detail: "Checking trusted computer")
                 } else if self.activeServer != nil {
                     self.requestPairingWithActiveServer()
                 } else {
+                    self.isPreflightComplete = true
+                    self.sendHello()
                     self.publishState(.connected, transport: transport.rawValue, detail: "")
                 }
             case .cancelled:
@@ -622,6 +629,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
         pendingAuthHandshake = nil
         pendingPairingHandshake = nil
         secureSession = nil
+        isPreflightComplete = false
         didPublishConnected = false
         isWiFiConnecting = false
         isCancellingTimedOutConnection = false
@@ -833,6 +841,8 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
                     )
                 }
                 pendingAuthHandshake = nil
+                isPreflightComplete = true
+                sendHello()
                 publishState(.connected, detail: "")
             }
 
@@ -873,6 +883,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
             trustStore.trust(serverID: response.serverID, name: response.serverName, token: token)
             refreshTrustedServers()
             persistSelectedServerWithoutRestart(response.serverID)
+            isPreflightComplete = true
             sendHello()
             publishState(.connected, detail: "")
 
@@ -890,7 +901,7 @@ final class TabletConnection: ObservableObject, @unchecked Sendable {
     }
 
     private func sendHello() {
-        guard connection != nil, canvasSize.width > 0, canvasSize.height > 0 else { return }
+        guard isPreflightComplete, connection != nil, canvasSize.width > 0, canvasSize.height > 0 else { return }
         sendMessage(
             .hello(
                 TabletHello(

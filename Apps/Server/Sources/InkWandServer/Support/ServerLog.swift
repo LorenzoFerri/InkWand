@@ -4,13 +4,13 @@ enum ServerLog {
     private static let lock = NSLock()
     private static let logURL: URL? = {
         #if os(macOS)
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent("InkWand", isDirectory: true)
+        else { return nil }
         #else
         let home = FileManager.default.homeDirectoryForCurrentUser
         let base = home.appendingPathComponent(".local/share/inkwand", isDirectory: true)
         #endif
-        guard let base else { return nil }
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base.appendingPathComponent("server.log")
     }()
@@ -38,7 +38,7 @@ enum ServerLog {
         lock.lock()
         defer { lock.unlock() }
         if !FileManager.default.fileExists(atPath: logURL.path) {
-            FileManager.default.createFile(atPath: logURL.path, contents: nil)
+            _ = FileManager.default.createFile(atPath: logURL.path, contents: nil)
         }
         guard let file = try? FileHandle(forWritingTo: logURL) else { return }
         defer { try? file.close() }
