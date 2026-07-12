@@ -37,6 +37,7 @@ enum LinuxInput {
     static let absDistance: Int32 = 0x19
     static let absTiltX: Int32 = 0x1a
     static let absTiltY: Int32 = 0x1b
+    static let absMisc: Int32 = 0x28
     static let absMtSlot: Int32 = 0x2f
     static let absMtTouchMajor: Int32 = 0x30
     static let absMtTouchMinor: Int32 = 0x31
