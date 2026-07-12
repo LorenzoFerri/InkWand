@@ -19,8 +19,6 @@ struct ServerSettingsView: View {
                 .padding(.vertical, 20)
                 .gtkStyleClass("sidebar")
 
-            Divider()
-
             ScrollView {
                 ServerSettingsContentView(
                     selectedSection: selectedSection ?? .status,
@@ -40,6 +38,7 @@ struct ServerSettingsView: View {
         .gtkStyleClass("background")
         .colorScheme(GTKThemePreference.swiftUIColorScheme)
         .gtkApplyThemePreference()
+        .gtkApplyApplicationStyle()
     }
 }
 

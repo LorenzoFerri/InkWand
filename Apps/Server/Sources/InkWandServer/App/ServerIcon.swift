@@ -23,7 +23,7 @@ enum ServerIcon {
     var gtkIconName: String {
         switch self {
         case .status:
-            return "emblem-ok-symbolic"
+            return "dialog-information-symbolic"
         case .connections:
             return "network-workgroup-symbolic"
         case .devices, .ipad:
@@ -31,17 +31,17 @@ enum ServerIcon {
         case .settings:
             return "preferences-system-symbolic"
         case .usb:
-            return "drive-removable-media-symbolic"
+            return "media-removable-symbolic"
         case .wifi:
             return "network-wireless-symbolic"
         case .port:
             return "network-server-symbolic"
         case .pen:
-            return "input-tablet-symbolic"
+            return "document-edit-symbolic"
         case .touch:
             return "input-touchpad-symbolic"
         case .pad:
-            return "input-gaming-symbolic"
+            return "input-keyboard-symbolic"
         case .firewall:
             return "security-high-symbolic"
         }

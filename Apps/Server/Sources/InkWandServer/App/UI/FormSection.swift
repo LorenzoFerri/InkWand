@@ -90,5 +90,6 @@ struct EmptyStateRow: View {
     var body: some View {
         AppLabel(title, style: .secondary)
             .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
