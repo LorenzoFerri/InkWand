@@ -1,7 +1,12 @@
 import Foundation
+#if os(Linux)
+import Glibc
+#endif
 
 final class ServicePublisher {
     private let process: Process?
+    private let lock = NSLock()
+    private var didStop = false
     #if os(macOS)
     private let service: NetService?
     private let delegate: NetServiceLogger?
@@ -22,6 +27,10 @@ final class ServicePublisher {
     }
     #endif
 
+    deinit {
+        stop()
+    }
+
     static func startBestEffort(name: String, port: UInt16, verbose: Bool) -> ServicePublisher {
         #if os(macOS)
         let service = NetService(domain: "local.", type: "_inkwand._tcp.", name: name, port: Int32(port))
@@ -34,14 +43,14 @@ final class ServicePublisher {
         }
         return ServicePublisher(process: nil, service: service, delegate: delegate, verbose: verbose)
         #else
-        guard commandExists("avahi-publish-service") else {
+        guard let avahiPublishService = commandPath("avahi-publish-service") else {
             print("avahi-publish-service not found; Wi-Fi discovery may not be available.")
             return ServicePublisher(process: nil, verbose: verbose)
         }
 
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["avahi-publish-service", name, "_inkwand._tcp", "\(port)"]
+        process.executableURL = URL(fileURLWithPath: avahiPublishService)
+        process.arguments = [name, "_inkwand._tcp", "\(port)"]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
 
@@ -65,6 +74,14 @@ final class ServicePublisher {
     }
 
     func stop() {
+        lock.lock()
+        guard !didStop else {
+            lock.unlock()
+            return
+        }
+        didStop = true
+        lock.unlock()
+
         #if os(macOS)
         if let service {
             if verbose {
@@ -78,24 +95,43 @@ final class ServicePublisher {
             print("stopping Bonjour publisher")
         }
         process.terminate()
+        #if os(Linux)
+        waitForExit(process, timeout: 2.0)
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
+        #endif
         process.waitUntilExit()
     }
 
-    private static func commandExists(_ name: String) -> Bool {
+    private static func commandPath(_ name: String) -> String? {
         let process = Process()
+        let output = Pipe()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["which", name]
-        process.standardOutput = FileHandle.nullDevice
+        process.standardOutput = output
         process.standardError = FileHandle.nullDevice
 
         do {
             try process.run()
             process.waitUntilExit()
-            return process.terminationStatus == 0
+            guard process.terminationStatus == 0 else { return nil }
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            let path = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            return path.isEmpty ? nil : path
         } catch {
-            return false
+            return nil
         }
     }
+
+    #if os(Linux)
+    private func waitForExit(_ process: Process, timeout: TimeInterval) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+    }
+    #endif
 }
 
 #if os(macOS)

@@ -11,6 +11,7 @@ import SwiftCrossUI
 @HotReloadable
 struct InkWandServerApp: App {
     private static let runtime = InkWandServerRuntime()
+    private static let shutdownCoordinator = ShutdownCoordinator()
 
     @State private var refreshID = 0
     @State private var autostartEnabled = false
@@ -19,6 +20,10 @@ struct InkWandServerApp: App {
 
     init() {
         GTKThemePreference.configureIfPossible()
+        Self.shutdownCoordinator.setCleanup {
+            Self.runtime.stop()
+        }
+        Self.shutdownCoordinator.installSignalHandlers()
 
         do {
             try Self.runtime.start()
