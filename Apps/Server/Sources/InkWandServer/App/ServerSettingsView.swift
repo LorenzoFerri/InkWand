@@ -3,7 +3,7 @@ import SwiftCrossUI
 
 struct ServerSettingsView: View {
     let runtime: InkWandServerRuntime
-    @Binding var autostartEnabled: Bool
+    let appState: ServerAppState
     let refresh: () -> Void
     let setAutostart: (Bool) -> Void
     let openFirewall: @MainActor @Sendable () -> Void
@@ -23,7 +23,7 @@ struct ServerSettingsView: View {
                 ServerSettingsContentView(
                     selectedSection: selectedSection ?? .status,
                     runtime: runtime,
-                    autostartEnabled: $autostartEnabled,
+                    appState: appState,
                     refresh: refresh,
                     setAutostart: setAutostart,
                     openFirewall: openFirewall
@@ -45,7 +45,7 @@ struct ServerSettingsView: View {
 private struct ServerSettingsContentView: View {
     let selectedSection: ServerSettingsSection
     let runtime: InkWandServerRuntime
-    @Binding var autostartEnabled: Bool
+    let appState: ServerAppState
     let refresh: () -> Void
     let setAutostart: (Bool) -> Void
     let openFirewall: @MainActor @Sendable () -> Void
@@ -54,24 +54,27 @@ private struct ServerSettingsContentView: View {
         switch selectedSection {
         case .status:
             VStack(alignment: .leading, spacing: 20) {
-                StatusSection(state: runtime.state)
-                ServerInfoSection(runtime: runtime)
+                StatusSection(snapshot: appState.runtime)
+                ServerInfoSection(snapshot: appState.runtime)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         case .connections:
-            ConnectionsSection(runtime: runtime, refresh: refresh)
+            ConnectionsSection(snapshot: appState.runtime, now: appState.now, runtime: runtime, refresh: refresh)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         case .devices:
             VStack(alignment: .leading, spacing: 20) {
-                TrustedDevicesSection(runtime: runtime, refresh: refresh)
+                TrustedDevicesSection(snapshot: appState.runtime, runtime: runtime, refresh: refresh)
                 VirtualDevicesSection()
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         case .settings:
             VStack(alignment: .leading, spacing: 20) {
-                NetworkSection(port: Int(runtime.currentPort))
+                NetworkSection(port: Int(appState.runtime.port))
                 StartupSection(
-                    autostartEnabled: $autostartEnabled,
+                    autostartEnabled: Binding(
+                        get: { appState.autostartEnabled },
+                        set: { setAutostart($0) }
+                    ),
                     setAutostart: setAutostart,
                     openFirewall: openFirewall
                 )

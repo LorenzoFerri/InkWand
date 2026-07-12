@@ -67,6 +67,9 @@ final class InkWandServerRuntime: @unchecked Sendable {
     var currentPairingCode: ActivePairingCode? { lock.withLock { pairingCode } }
     var trustedPeers: [TrustedPeer] { lock.withLock { trustStore?.allPeers() ?? [] } }
     var pendingPairingRequests: [PendingPairingRequest] { lock.withLock { pairingManager?.pendingApprovals() ?? [] } }
+    var activeTabletSession: TabletSessionCoordinator.SessionStatus {
+        lock.withLock { coordinator?.sessionStatus ?? .disconnected }
+    }
 
     func start(pairing: Bool = false) throws {
         lock.lock()
@@ -108,6 +111,9 @@ final class InkWandServerRuntime: @unchecked Sendable {
                 authenticator: sessionAuthenticator,
                 verbose: verbose
             )
+            sessionCoordinator.onSessionStatusChanged = { [weak self] in
+                self?.notifyChanged()
+            }
 
             let advertisedPort = port
             let listener = enableWiFi ? WiFiTabletListener(port: port, verbose: verbose, coordinator: sessionCoordinator) : nil

@@ -1,8 +1,9 @@
+import Foundation
 import InkWandCore
 import SwiftCrossUI
 
 struct StatusSection: View {
-    let state: InkWandServerRuntime.State
+    let snapshot: ServerRuntimeSnapshot
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
@@ -11,56 +12,46 @@ struct StatusSection: View {
             CardRow {
                 HStack(spacing: 13) {
                     Circle()
-                        .fill(statusColor)
+                        .fill(snapshot.statusColor)
                         .frame(width: 14, height: 14)
-                    AppLabel(state.title)
+                    AppLabel(snapshot.statusTitle)
                     Spacer()
-                    AppLabel(state.serverHeadline, style: .secondary)
+                    AppLabel(snapshot.serverHeadline, style: .secondary)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
-
-    private var statusColor: SwiftCrossUI.Color {
-        switch state {
-        case .ready:
-            return .green
-        case .starting:
-            return .orange
-        case .stopped:
-            return .gray
-        case .failed:
-            return .red
-        }
-    }
 }
 
 struct ServerInfoSection: View {
-    let runtime: InkWandServerRuntime
+    let snapshot: ServerRuntimeSnapshot
 
     var body: some View {
         FormSection("Server") {
-            SettingsRow(title: "Computer name", value: runtime.currentServerName)
+            SettingsRow(title: "Computer name", value: snapshot.serverName)
             Divider()
-            SettingsRow(title: "Details", value: runtime.state.serverDetail)
+            SettingsRow(title: "Details", value: snapshot.serverDetail)
         }
     }
 }
 
 struct ConnectionsSection: View {
+    let snapshot: ServerRuntimeSnapshot
+    let now: Date
     let runtime: InkWandServerRuntime
     let refresh: () -> Void
 
     var body: some View {
         FormSection("Connections") {
-            if runtime.pendingPairingRequests.isEmpty {
+            if snapshot.pendingPairingRequests.isEmpty {
                 EmptyStateRow("No pending pairing requests")
             } else {
                 HeaderRow("Pending Pairing Request")
-                ForEach(runtime.pendingPairingRequests) { request in
+                ForEach(snapshot.pendingPairingRequests) { request in
                     PendingPairingRow(
                         request: request,
+                        now: now,
                         approve: {
                             runtime.approvePairingRequest(id: request.requestID)
                             refresh()
@@ -78,12 +69,13 @@ struct ConnectionsSection: View {
 
 private struct PendingPairingRow: View {
     let request: PendingPairingRequest
+    let now: Date
     let approve: @MainActor @Sendable () -> Void
     let reject: @MainActor @Sendable () -> Void
 
     var body: some View {
         HStack(spacing: 13) {
-            ThemedIcon(.ipad)
+            ThemedIcon(.ipad, size: 32)
             VStack(alignment: .leading, spacing: 3) {
                 AppLabel(request.clientName)
                 AppLabel(
@@ -103,20 +95,21 @@ private struct PendingPairingRow: View {
     }
 
     private var pairingSecondsRemaining: Int {
-        max(0, Int(request.expiresAt.timeIntervalSinceNow.rounded(.up)))
+        max(0, Int(request.expiresAt.timeIntervalSince(now).rounded(.up)))
     }
 }
 
 struct TrustedDevicesSection: View {
+    let snapshot: ServerRuntimeSnapshot
     let runtime: InkWandServerRuntime
     let refresh: () -> Void
 
     var body: some View {
         FormSection("Trusted iPads") {
-            if runtime.trustedPeers.isEmpty {
+            if snapshot.trustedPeers.isEmpty {
                 EmptyStateRow("No trusted iPads yet")
             } else {
-                ForEach(runtime.trustedPeers) { peer in
+                ForEach(snapshot.trustedPeers) { peer in
                     TrustedDeviceRow(
                         peer: peer,
                         revoke: {
@@ -219,33 +212,5 @@ private struct OpenFirewallRow: View {
             }
         }
         .padding(12)
-    }
-}
-
-extension InkWandServerRuntime.State {
-    var serverHeadline: String {
-        switch self {
-        case .ready:
-            return "Ready to connect an iPad"
-        case .starting:
-            return "Starting the tablet server"
-        case .stopped:
-            return "Server is stopped"
-        case .failed:
-            return "Setup needs attention"
-        }
-    }
-
-    var serverDetail: String {
-        switch self {
-        case .ready:
-            return "Keep this app open. InkWand will appear on iPads using the same Wi-Fi network."
-        case .starting:
-            return "Preparing virtual input devices and network discovery."
-        case .stopped:
-            return "Reopen the app to start the server."
-        case let .failed(message):
-            return message
-        }
     }
 }

@@ -3,6 +3,14 @@ import Foundation
 import InkWandCore
 
 final class TabletSessionCoordinator: @unchecked Sendable {
+    struct SessionStatus: Equatable {
+        var isConnected: Bool
+        var deviceName: String?
+        var transport: String?
+
+        static let disconnected = SessionStatus(isConnected: false, deviceName: nil, transport: nil)
+    }
+
     private let lock = NSLock()
     private let mapper = TabletMapper()
     private let device: PenInputDevice
@@ -15,6 +23,7 @@ final class TabletSessionCoordinator: @unchecked Sendable {
     private let inputSettleDelay: TimeInterval = 0.015
     private var activeSessionID = UUID()
     private var activeTransport = "none"
+    private var activeDeviceName: String?
     private var didReceiveHello = false
     private var activeTool: PencilTool?
     private var inputCounters = InputCounters()
@@ -37,10 +46,25 @@ final class TabletSessionCoordinator: @unchecked Sendable {
         self.verbose = verbose
     }
 
+    var onSessionStatusChanged: (() -> Void)?
+
     var maxX: Int32 { mapper.maxX }
     var maxY: Int32 { mapper.maxY }
     var maxPressure: Int32 { mapper.maxPressure }
     var hasActiveTabletSession: Bool { lock.withLock { sessionIsActive } }
+    var sessionStatus: SessionStatus {
+        lock.withLock {
+            guard sessionIsActive else {
+                return .disconnected
+            }
+
+            return SessionStatus(
+                isConnected: true,
+                deviceName: activeDeviceName,
+                transport: activeTransport
+            )
+        }
+    }
 
     @discardableResult
     func runSession(_ client: TabletClient, transport: String) -> Bool {
@@ -59,8 +83,8 @@ final class TabletSessionCoordinator: @unchecked Sendable {
                     return
                 }
 
-                if case .hello = message, sessionID == nil {
-                    sessionID = self.beginSession(transport: transport)
+                if case let .hello(hello) = message, sessionID == nil {
+                    sessionID = self.beginSession(deviceName: hello.deviceName, transport: transport)
                 }
 
                 guard let activeSessionID = sessionID else {
@@ -98,12 +122,11 @@ final class TabletSessionCoordinator: @unchecked Sendable {
         touchDevice.destroy()
     }
 
-    private func beginSession(transport: String) -> UUID {
+    private func beginSession(deviceName: String, transport: String) -> UUID {
         lock.lock()
-        defer { lock.unlock() }
-
         activeSessionID = UUID()
         activeTransport = transport
+        activeDeviceName = deviceName
         didReceiveHello = false
         inputCounters = InputCounters()
         sampleTiming = PenSampleTimingDiagnostics()
@@ -112,16 +135,18 @@ final class TabletSessionCoordinator: @unchecked Sendable {
         try? padDevice.release()
         try? touchDevice.release(timestamp: 0)
         activeTool = nil
+        let sessionID = activeSessionID
+        lock.unlock()
 
         ServerLog.info("Accepted \(transport) tablet session.")
-        return activeSessionID
+        onSessionStatusChanged?()
+        return sessionID
     }
 
     private func endSession(_ sessionID: UUID) {
         lock.lock()
-        defer { lock.unlock() }
-
         guard sessionID == activeSessionID else {
+            lock.unlock()
             return
         }
 
@@ -131,9 +156,13 @@ final class TabletSessionCoordinator: @unchecked Sendable {
         logSessionSummary()
         didReceiveHello = false
         activeTransport = "none"
+        activeDeviceName = nil
         activeTool = nil
         sessionIsActive = false
+        lock.unlock()
+
         ServerLog.info("Tablet session disconnected.")
+        onSessionStatusChanged?()
     }
 
     private func handle(_ message: InkMessage, sessionID: UUID, transport: String) throws {
