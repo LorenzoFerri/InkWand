@@ -63,6 +63,22 @@ cd Apps/Server
 swift bundler bundle InkWandServer
 ```
 
+For SwiftCrossUI hot reload, run the app through Swift Bundler instead of
+`swift run`. Swift Bundler starts the hot reload server and passes
+`SWIFT_BUNDLER_SERVER` to the app:
+
+```bash
+cd Apps/Server
+swift bundler run InkWandServer --hot
+```
+
+If Swift Bundler is only available as a package plugin, use:
+
+```bash
+cd Apps/Server
+swift package plugin --allow-writing-to-package-directory bundler run InkWandServer --hot
+```
+
 If Swift Bundler does not emit an AppImage directly in your Linux environment, use its bundle output as the AppDir input for AppImage tooling.
 
 ## Run
